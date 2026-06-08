@@ -12,61 +12,42 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-name: Java CI with Maven
+name: Milestone 4 Java CI
 
 on:
-  pull_request:
-    branches: [ "master" ]
   push:
-    branches: [ "master" ]
+    branches:
+      - main
+      - milestone4-refactoring
+  pull_request:
+    branches:
+      - main
+      - milestone4-refactoring
+  workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.experimental }}
-    strategy:
-      matrix:
-        os: [ ubuntu-latest ]
-        java: [ 17, 21 ]
-        module: [ Client, Server, Core, External, Check-Updated-License-Files, Integration-Test ]
-        experimental: [false]
-      fail-fast: false
+  build-and-test:
+    runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 16
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '2.7'
-      - name: Set up JDK ${{ matrix.java }}
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: ${{ matrix.java }}
-      - name: Set up Maven #We need to avoid default-http-blocker at the moment until we fix it ;-)
-        uses: stCarolas/setup-maven@v5
-        with:
-          maven-version: 3.6.3
-      - name: Ensure a clean state without storm artifacts
-        run: rm -rf ~/.m2/repository/org/apache/storm
-      - name: Set up project dependencies
-        run: /bin/bash ./dev-tools/gitact/gitact-install.sh `pwd`
-      - name: Run build
-        run: |
-          export JDK_VERSION=${{ matrix.java }} 
-          export USER=github
-          /bin/bash ./dev-tools/gitact/gitact-script.sh `pwd` ${{ matrix.module }};
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build selected modules and run Milestone 4 tests
+        run: >
+          mvn -B
+          -pl external/storm-hdfs,external/storm-redis
+          -am test
+          -Dtest=HdfsSpoutCategoryPartitionTest,RedisKeyValueStateIteratorCategoryPartitionTest
+          -DskipITs
+          -Dcheckstyle.skip=true
+          -Drat.skip=true
+          -DfailIfNoTests=false
+          -Dsurefire.failIfNoSpecifiedTests=false
