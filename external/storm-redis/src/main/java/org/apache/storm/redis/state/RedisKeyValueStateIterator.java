@@ -61,7 +61,7 @@ public class RedisKeyValueStateIterator<K, V> extends BaseBinaryStateIterator<K,
         this.scanParams = new ScanParams().count(chunkSize);
         this.cursor = ScanParams.SCAN_POINTER_START_BINARY;
     }
-
+    
     @Override
     protected Iterator<Map.Entry<byte[], byte[]>> loadChunkFromStateStorage() {
         loadChunkFromRedis();
