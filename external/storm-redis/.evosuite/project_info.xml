@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Project>
+    <totalNumberOfTestableClasses>1</totalNumberOfTestableClasses>
+    <cut>
+        <fullNameOfTargetClass>org.apache.storm.redis.state.RedisKeyValueStateIterator</fullNameOfTargetClass>
+        <fullNameOfTestSuite>org.apache.storm.redis.state.RedisKeyValueStateIterator_ESTest</fullNameOfTestSuite>
+        <generation>
+            <id>0</id>
+            <failed>true</failed>
+            <modified>true</modified>
+            <timeBudgetInSeconds>180</timeBudgetInSeconds>
+            <memoryInMB>3000</memoryInMB>
+            <std_err_CLIENT>C:\Users\User\ISW2_Project\external_repos\storm-v2.7.1\external\storm-redis\.evosuite\tmp_2026_06_09_17_33_05\logs\org.apache.storm.redis.state.RedisKeyValueStateIterator\std_err_CLIENT.log</std_err_CLIENT>
+            <std_out_CLIENT>C:\Users\User\ISW2_Project\external_repos\storm-v2.7.1\external\storm-redis\.evosuite\tmp_2026_06_09_17_33_05\logs\org.apache.storm.redis.state.RedisKeyValueStateIterator\std_out_CLIENT.log</std_out_CLIENT>
+            <std_err_MASTER>C:\Users\User\ISW2_Project\external_repos\storm-v2.7.1\external\storm-redis\.evosuite\tmp_2026_06_09_17_33_05\logs\org.apache.storm.redis.state.RedisKeyValueStateIterator\std_err_MASTER.log</std_err_MASTER>
+            <std_out_MASTER>C:\Users\User\ISW2_Project\external_repos\storm-v2.7.1\external\storm-redis\.evosuite\tmp_2026_06_09_17_33_05\logs\org.apache.storm.redis.state.RedisKeyValueStateIterator\std_out_MASTER.log</std_out_MASTER>
+        </generation>
+    </cut>
+</Project>

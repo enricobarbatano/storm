@@ -47,6 +47,23 @@
             <version>${project.version}</version>
             <scope>${provided.scope}</scope>
         </dependency>
+        
+<!-- Required to run Randoop-generated JUnit 4 tests under JUnit Platform/Surefire. -->
+<dependency>
+    <groupId>org.junit.vintage</groupId>
+    <artifactId>junit-vintage-engine</artifactId>
+    <version>${junit.jupiter.version}</version>
+    <scope>test</scope>
+</dependency>
+
+<!-- Required because Randoop generated tests import org.junit.Test and JUnit 4 runner classes. -->
+<dependency>
+    <groupId>junit</groupId>
+    <artifactId>junit</artifactId>
+    <version>4.13.2</version>
+    <scope>test</scope>
+</dependency>
+
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
@@ -106,6 +123,81 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
             </plugin>
+            <plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-surefire-plugin</artifactId>
+    <configuration>
+        <argLine>@{jacocoArgLine}</argLine>
+    </configuration>
+</plugin>
         </plugins>
     </build>
+    <profiles>
+    <profile>
+        <id>evosuite</id>
+
+        <properties>
+           <evosuiteVersion>1.0.6</evosuiteVersion>
+           <jacocoArgLine></jacocoArgLine>
+        </properties>
+
+        <dependencies>
+            <!-- Runtime necessario per compilare/eseguire i test generati da EvoSuite -->
+            <dependency>
+                <groupId>org.evosuite</groupId>
+                <artifactId>evosuite-standalone-runtime</artifactId>
+                <version>${evosuiteVersion}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- EvoSuite genera test JUnit 4 -->
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>4.13.2</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- Serve se il progetto usa JUnit Platform / JUnit 5 ma vuoi eseguire test JUnit 4 -->
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+
+        <build>
+            <plugins>
+                <plugin>
+                    <groupId>org.evosuite.plugins</groupId>
+                    <artifactId>evosuite-maven-plugin</artifactId>
+                    <version>${evosuiteVersion}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>prepare</goal>
+                            </goals>
+                            <phase>process-test-classes</phase>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <configuration>
+                        <properties>
+                            <property>
+                                <name>listener</name>
+                                <value>org.evosuite.runtime.InitializingListener</value>
+                            </property>
+                        </properties>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </build>
+    </profile>
+</profiles>
+
 </project>

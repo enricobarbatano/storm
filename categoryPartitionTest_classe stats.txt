@@ -1,0 +1,46 @@
+Cosa fa StatsUtil
+StatsUtil è una classe utility statica di Apache Storm che serve a calcolare, 
+aggregare, 
+trasformare e convertire statistiche di esecuzione di topology, 
+spout, bolt, executor e worker.In pratica prende dati grezzi, spesso sotto forma di:
+Map<String, Object>
+Map<String, Map<...>>
+List<ExecutorSummary>
+ExecutorStats
+ExecutorBeat
+ClusterWorkerHeartbeat
+StormTopology
+e li trasforma in statistiche aggregate usate da Storm per pagine/componenti/topology.
+Le responsabilità principali sono:
+1. aggregare contatori;
+2. calcolare medie pesate;
+3. calcolare latenze aggregate;
+4. filtrare stream di sistema;
+5. aggregare statistiche di bolt e spout;
+6. convertire strutture Thrift in Map Java;
+7. convertire Map Java in strutture Thrift;
+8. costruire statistiche per worker, componenti e topology.
+
+
+
+StatsUtil è una classe utility statica usata per aggregare e convertire statistiche Storm relative a spout, bolt, executor, worker, componenti e topology. La classe lavora soprattutto con Map annidate e strutture Thrift.
+
+Per i test BB è stato scelto un approccio black-box basato su Category Partition. Le partizioni sono state definite sul comportamento osservabile dei metodi pubblici, senza testare direttamente i metodi privati.
+
+Le funzionalità considerate inizialmente sono: aggregazione di contatori, calcolo di medie pesate, aggregazione statistiche bolt, aggregazione statistiche spout, gestione di valori null/vuoti e utility semplici.
+
+Le categorie principali individuate sono:
+A - forma dell’input: null, vuoto, una finestra, più finestre, una stream, più stream;
+B - valori numerici: zero, positivi, mancanti, Long, Double;
+C - medie pesate: conteggio positivo, conteggio zero, media mancante, conteggio mancante;
+D - tipo componente: bolt, spout, sistema, null;
+E - stream di sistema: includeSys true/false;
+F - statistiche bolt: executed, execute latency, process latency;
+G - statistiche spout: acked, complete latency, failed;
+H - utility semplici: floatStr, errorSubset, componentType.
+
+La prima suite BB si concentra sui metodi pubblici più controllabili: aggregateCountStreams, aggregateCounts, aggBoltLatAndCount, aggSpoutLatAndCount, aggBoltStreamsLatAndCount, aggSpoutStreamsLatAndCount e floatStr. I metodi più complessi verranno eventualmente testati dopo la prima misurazione JaCoCo, come parte dell’adequacy growth.
+
+Per la suite BB di StatsUtil non sono stati utilizzati mock perché i metodi selezionati sono metodi statici di utility che lavorano principalmente su Map, List e semplici oggetti Thrift costruibili direttamente nei test. Non sono presenti dipendenze esterne da simulare, come database, rete, filesystem o servizi remoti. Per questo motivo, l’uso di Mockito avrebbe reso i test più complessi senza migliorare l’oracolo.
+
+Non sono stati introdotti @BeforeEach e @AfterEach perché ogni test costruisce autonomamente i propri input, mantenendo la suite leggibile, indipendente e coerente con un approccio black-box manuale. L’unico stato globale modificato è la Locale nel test di floatStr, che viene gestita localmente con try/finally per garantire determinismo e ripristino dello stato precedente.
