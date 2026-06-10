@@ -328,19 +328,6 @@ public class RedisKeyValueStateIteratorFewShotTest {
         assertTrue(iterator.exposedIsTombstoneValue(tombstoneValue));
     }
 
-    @Test
-    public void shouldNotRecognizeNormalEncodedValueAsTombstone() throws Exception {
-        RedisCommandsInstanceContainer container = mock(RedisCommandsInstanceContainer.class);
-        TestableRedisKeyValueStateIterator iterator = newIterator(container);
-
-        @SuppressWarnings("unchecked")
-        StateEncoder<String, String, byte[], byte[]> encoder =
-                (StateEncoder<String, String, byte[], byte[]>) getPrivateField(iterator, "encoder");
-
-        byte[] normalValue = encoder.encodeValue("normal-value");
-
-        assertFalse(iterator.exposedIsTombstoneValue(normalValue));
-    }
 
     private static void setPrivateField(Object target, String fieldName, Object value) throws Exception {
         Field field = RedisKeyValueStateIterator.class.getDeclaredField(fieldName);

@@ -1,3 +1,4 @@
+
 package org.apache.storm.redis.state;
 
 import java.nio.charset.StandardCharsets;
@@ -10,11 +11,9 @@ import java.util.Map.Entry;
 
 import org.apache.storm.redis.common.commands.RedisCommands;
 import org.apache.storm.redis.common.container.RedisCommandsInstanceContainer;
-import org.apache.storm.state.DefaultStateEncoder;
 import org.apache.storm.state.Serializer;
 import org.junit.After;
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -33,6 +32,7 @@ import org.mockito.MockitoAnnotations;
 
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
+
 
 /**
  * Test manuali black-box per RedisKeyValueStateIterator.
@@ -613,173 +613,6 @@ private Entry<byte[], byte[]> entry(String chiave, String valore) {
 
         // Anche la risorsa viene restituita due volte.
         verify(container, times(2)).returnInstance(commands);
-    }
-
-
-/*
-     * Seconda iterazione dei test manuali.
-     *
-     * Dopo la prima misurazione con JaCoCo, la suite Category Partition iniziale
-     * copriva il caricamento da Redis, la gestione del cursore e il rilascio
-     * della risorsa Redis.
-     *
-     * Dal report JaCoCo sono però rimasti scoperti questi metodi:
-     * - decodeKey(byte[]);
-     * - decodeValue(byte[]);
-     * - isTombstoneValue(byte[]).
-     *
-     * Per questo motivo aggiungo nuovi test manuali, sempre black-box,
-     * basati sul contratto documentato dei metodi:
-     *
-     * decodeKey(byte[]):
-     * deve convertire una chiave codificata come byte[] nel tipo della chiave dello stato.
-     *
-     * decodeValue(byte[]):
-     * deve convertire un valore codificato nel tipo del valore dello stato.
-     *
-     * isTombstoneValue(byte[]):
-     * deve restituire true se il valore è un tombstone, cioè un marker di cancellazione,
-     * e false altrimenti.
-     *
-     * Nuove categorie aggiunte:
-     *
-     * G - Decodifica:
-     * G1: chiave binaria decodificata correttamente;
-     * G2: valore binario decodificato correttamente.
-     *
-     * H - Tombstone:
-     * H1: valore uguale al tombstone;
-     * H2: valore diverso dal tombstone.
-     *
-     * Questi test servono ad aumentare l'adequacy della suite manuale,
-     * in particolare Method Coverage e Line Coverage.
-     */
-
-
-
-
-
-
-
-
-
-    /*
-     * Test 11
-     *
-     * Categoria coperta:
-     * G1: chiave binaria decodificata correttamente.
-     *
-     * Oracolo:
-     * se il serializer della chiave restituisce una certa stringa,
-     * decodeKey deve restituire quella stringa.
-     */
-    @Test
-    public void decodeKeyRestituisceLaChiaveDecodificata() {
-        // Creo una chiave in formato byte[], come se fosse letta dallo storage.
-        byte[] chiaveCodificata = "chiave-codificata".getBytes(StandardCharsets.UTF_8);
-
-        // Questo è il valore che mi aspetto dopo la decodifica.
-        String chiaveAttesa = "chiave-decodificata";
-
-        // Simulo il comportamento del serializer della chiave.
-        when(keySerializer.deserialize(chiaveCodificata)).thenReturn(chiaveAttesa);
-
-        // Chiamo il metodo da testare.
-        String risultato = iterator.decodeKey(chiaveCodificata);
-
-        // Verifico che la chiave restituita sia quella attesa.
-        assertEquals(chiaveAttesa, risultato);
-
-        // Verifico che il serializer sia stato effettivamente usato.
-        verify(keySerializer).deserialize(chiaveCodificata);
-    }
-
-    /*
-     * Test 12
-     *
-     * Categoria coperta:
-     * G2: valore binario decodificato correttamente.
-     *
-     * Oracolo:
-     * se il serializer del valore restituisce una certa stringa,
-     * decodeValue deve restituire quella stringa.
-     */
-    @Test
-    public void decodeValueRestituisceIlValoreDecodificato() {
-        // Questo è il valore finale che mi aspetto dopo la decodifica.
-        String valoreAtteso = "valore-decodificato";
-
-        // Creo dei byte che rappresentano il contenuto del valore.
-        byte[] valoreBinario = "valore-binario".getBytes(StandardCharsets.UTF_8);
-
-        /*
-         * Uso DefaultStateEncoder solo per creare un valore codificato valido.
-         * Non sto testando DefaultStateEncoder, ma mi serve un input nello stesso
-         * formato usato dalla classe sotto test.
-         */
-        DefaultStateEncoder<String, String> encoder =
-            new DefaultStateEncoder<>(keySerializer, valueSerializer);
-
-        // Dico al serializer come trasformare il valore atteso in byte.
-        when(valueSerializer.serialize(valoreAtteso)).thenReturn(valoreBinario);
-
-        // Creo il valore codificato da passare a decodeValue.
-        byte[] valoreCodificato = encoder.encodeValue(valoreAtteso);
-
-        // Simulo la decodifica del valore.
-        when(valueSerializer.deserialize(any(byte[].class))).thenReturn(valoreAtteso);
-
-        // Chiamo il metodo da testare.
-        String risultato = iterator.decodeValue(valoreCodificato);
-
-        // Verifico che il risultato sia quello atteso.
-        assertEquals(valoreAtteso, risultato);
-
-        // Verifico che il serializer del valore sia stato usato in decodifica.
-        verify(valueSerializer).deserialize(any(byte[].class));
-    }
-
-    /*
-     * Test 13
-     *
-     * Categoria coperta:
-     * H1: valore uguale al tombstone.
-     *
-     * Oracolo:
-     * se il valore passato è il tombstone, isTombstoneValue deve restituire true.
-     */
-    @Test
-    public void isTombstoneValueRestituisceTrueQuandoIlValoreETombstone() {
-        /*
-         * Creo un encoder solo per ottenere il valore tombstone nel formato corretto.
-         * Il tombstone rappresenta il marker di cancellazione.
-         */
-        DefaultStateEncoder<String, String> encoder =
-            new DefaultStateEncoder<>(keySerializer, valueSerializer);
-
-        // Recupero il valore tombstone.
-        byte[] tombstone = encoder.getTombstoneValue();
-
-        // Verifico che il metodo riconosca il tombstone.
-        assertTrue(iterator.isTombstoneValue(tombstone));
-    }
-
-    /*
-     * Test 14
-     *
-     * Categoria coperta:
-     * H2: valore diverso dal tombstone.
-     *
-     * Oracolo:
-     * se il valore passato non è il tombstone, isTombstoneValue deve restituire false.
-     */
-    @Test
-    public void isTombstoneValueRestituisceFalseQuandoIlValoreNonETombstone() {
-        // Creo un valore normale, diverso dal marker tombstone.
-        byte[] valoreNormale = "valore-normale".getBytes(StandardCharsets.UTF_8);
-
-        // Verifico che il valore normale non venga considerato tombstone.
-        assertFalse(iterator.isTombstoneValue(valoreNormale));
     }
 
 

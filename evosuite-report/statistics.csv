@@ -1,0 +1,9 @@
+TARGET_CLASS,criterion,Coverage,Total_Goals,Covered_Goals
+org.apache.storm.redis.state.RedisKeyValueStateIterator,BRANCH,0.07692307692307693,13,1
+org.apache.storm.redis.state.RedisKeyValueStateIterator,LINE;BRANCH,0.0,37,0
+org.apache.storm.redis.state.RedisKeyValueStateIterator,LINE;BRANCH,0.12179487179487179,37,4
+org.apache.storm.redis.state.RedisKeyValueStateIterator,LINE;BRANCH;EXCEPTION;WEAKMUTATION;OUTPUT;METHOD;METHODNOEXCEPTION;CBRANCH,0.1233974358974359,85,7
+org.apache.storm.stats.StatsUtil,LINE;BRANCH,0.542842456412731,1700,932
+org.apache.storm.redis.state.RedisKeyValueStateIteratorHarness,LINE;BRANCH,0.15451612903225806,112,15
+org.apache.storm.redis.state.RedisKeyValueStateIteratorHarness,LINE;BRANCH,0.1098366067007757,156,15
+org.apache.storm.redis.state.RedisKeyValueStateIteratorHarness,LINE;BRANCH,0.1281362007168459,134,15

@@ -31,3 +31,9 @@ jobs:
 
       - name: Build with Maven
         run: mvn -B clean install --file pom.xml -Dmaven.test.skip=true -DskipITs -Dcheckstyle.skip=true -Drat.skip=true
+
+      - name: Run storm-server tests except EvoSuite
+        run: mvn -B -pl :storm-server "-Dtest=*Test,!*_ESTest" test -Dcheckstyle.skip=true -Drat.skip=true
+
+      - name: Run storm-redis tests except EvoSuite
+        run: mvn -B -pl :storm-redis "-Dtest=*Test,!*_ESTest" test -Dcheckstyle.skip=true -Drat.skip=true

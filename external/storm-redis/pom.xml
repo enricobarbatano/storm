@@ -15,7 +15,10 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -26,6 +29,10 @@
     </parent>
 
     <artifactId>storm-redis</artifactId>
+
+    <properties>
+        <jacocoArgLine></jacocoArgLine>
+    </properties>
 
     <developers>
         <developer>
@@ -47,56 +54,70 @@
             <version>${project.version}</version>
             <scope>${provided.scope}</scope>
         </dependency>
-        
-<!-- Required to run Randoop-generated JUnit 4 tests under JUnit Platform/Surefire. -->
-<dependency>
-    <groupId>org.junit.vintage</groupId>
-    <artifactId>junit-vintage-engine</artifactId>
-    <version>${junit.jupiter.version}</version>
-    <scope>test</scope>
-</dependency>
 
-<!-- Required because Randoop generated tests import org.junit.Test and JUnit 4 runner classes. -->
-<dependency>
-    <groupId>junit</groupId>
-    <artifactId>junit</artifactId>
-    <version>4.13.2</version>
-    <scope>test</scope>
-</dependency>
+        <!-- Required to run Randoop-generated JUnit 4 tests under JUnit Platform/Surefire. -->
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <version>${junit.jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Required because Randoop generated tests import org.junit.Test and JUnit 4 runner classes. -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
 
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
         </dependency>
+
         <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
             <version>${jedis.version}</version>
         </dependency>
+
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
+
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
         </dependency>
+
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.databind.version}</version>
         </dependency>
-        <!--test dependencies -->
+
+        <!-- test dependencies -->
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <!-- Test break with newer mockito atm -->
             <version>4.11.0</version>
         </dependency>
+
+<dependency>
+    <groupId>org.evosuite</groupId>
+    <artifactId>evosuite-standalone-runtime</artifactId>
+    <version>1.0.6</version>
+    <scope>test</scope>
+</dependency>
+
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest</artifactId>
         </dependency>
+
         <!-- Test Containers -->
         <dependency>
             <groupId>org.testcontainers</groupId>
@@ -104,6 +125,7 @@
             <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -117,87 +139,158 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <!--Note - the version would be inherited-->
+                <!-- Note - the version would be inherited -->
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
             </plugin>
+
             <plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-surefire-plugin</artifactId>
-    <configuration>
-        <argLine>@{jacocoArgLine}</argLine>
-    </configuration>
-</plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>${jacocoArgLine}</argLine>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
+
     <profiles>
-    <profile>
-        <id>evosuite</id>
+        <profile>
+            <id>evosuite</id>
 
-        <properties>
-           <evosuiteVersion>1.0.6</evosuiteVersion>
-           <jacocoArgLine></jacocoArgLine>
-        </properties>
+            <properties>
+                <evosuiteVersion>1.0.6</evosuiteVersion>
+                <jacocoArgLine></jacocoArgLine>
+            </properties>
 
-        <dependencies>
-            <!-- Runtime necessario per compilare/eseguire i test generati da EvoSuite -->
-            <dependency>
-                <groupId>org.evosuite</groupId>
-                <artifactId>evosuite-standalone-runtime</artifactId>
-                <version>${evosuiteVersion}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <!-- EvoSuite genera test JUnit 4 -->
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>4.13.2</version>
-                <scope>test</scope>
-            </dependency>
-
-            <!-- Serve se il progetto usa JUnit Platform / JUnit 5 ma vuoi eseguire test JUnit 4 -->
-            <dependency>
-                <groupId>org.junit.vintage</groupId>
-                <artifactId>junit-vintage-engine</artifactId>
-                <version>${junit.jupiter.version}</version>
-                <scope>test</scope>
-            </dependency>
-        </dependencies>
-
-        <build>
-            <plugins>
-                <plugin>
-                    <groupId>org.evosuite.plugins</groupId>
-                    <artifactId>evosuite-maven-plugin</artifactId>
+            <dependencies>
+                <!-- Runtime necessario per compilare/eseguire i test generati da EvoSuite -->
+                <dependency>
+                    <groupId>org.evosuite</groupId>
+                    <artifactId>evosuite-standalone-runtime</artifactId>
                     <version>${evosuiteVersion}</version>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>prepare</goal>
-                            </goals>
-                            <phase>process-test-classes</phase>
-                        </execution>
-                    </executions>
-                </plugin>
+                    <scope>test</scope>
+                </dependency>
 
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <configuration>
-                        <properties>
-                            <property>
-                                <name>listener</name>
-                                <value>org.evosuite.runtime.InitializingListener</value>
-                            </property>
-                        </properties>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </build>
-    </profile>
-</profiles>
+                <!-- EvoSuite genera test JUnit 4 -->
+                <dependency>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
+                    <version>4.13.2</version>
+                    <scope>test</scope>
+                </dependency>
 
+                <!-- Serve se il progetto usa JUnit Platform / JUnit 5 ma vuoi eseguire test JUnit 4 -->
+                <dependency>
+                    <groupId>org.junit.vintage</groupId>
+                    <artifactId>junit-vintage-engine</artifactId>
+                    <version>${junit.jupiter.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.evosuite.plugins</groupId>
+                        <artifactId>evosuite-maven-plugin</artifactId>
+                        <version>${evosuiteVersion}</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>prepare</goal>
+                                </goals>
+                                <phase>process-test-classes</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <properties>
+                                <property>
+                                    <name>listener</name>
+                                    <value>org.evosuite.runtime.InitializingListener</value>
+                                </property>
+                            </properties>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>pit-redis-iterator</id>
+
+            <properties>
+                <jacocoArgLine></jacocoArgLine>
+            </properties>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.pitest</groupId>
+                        <artifactId>pitest-maven</artifactId>
+                        <version>1.19.4</version>
+
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.pitest</groupId>
+                                <artifactId>pitest-junit5-plugin</artifactId>
+                                <version>1.2.3</version>
+                            </dependency>
+                        </dependencies>
+
+                        <configuration>
+                            <targetClasses>
+                                <param>org.apache.storm.redis.state.RedisKeyValueStateIterator*</param>
+                            </targetClasses>
+
+                            <targetTests>
+                                 <param>org.apache.storm.redis.state.RedisKeyValueStateIterator*Test</param>
+                            </targetTests>
+
+                            <!--
+                                Override dei gruppi ereditati dal parent.
+                                Senza questo blocco PIT riceveva un tag isolato "|",
+                                causando:
+                                Unable to parse tag expression "|"
+                            -->
+                            <excludedGroups combine.self="override">
+                                <param>IntegrationTest</param>
+                                <param>PerformanceTest</param>
+                            </excludedGroups>
+
+                            <excludedTestClasses>
+                                                        
+                          
+                                <param>**/*_ESTest*</param>
+                                <param>**/*_ESTest_scaffolding*</param>
+                                <param>**/*Harness*</param>
+                                <param>**/*IT*</param>
+                                <param>**/*Integration*</param>
+
+                            </excludedTestClasses>
+
+                            <outputFormats>
+                                <param>HTML</param>
+                                <param>XML</param>
+                            </outputFormats>
+
+                            <timestampedReports>false</timestampedReports>
+                            <threads>1</threads>
+                            <timeoutConstant>10000</timeoutConstant>
+                            <failWhenNoMutations>false</failWhenNoMutations>
+                            <verbose>true</verbose>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

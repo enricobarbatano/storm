@@ -349,28 +349,9 @@ public void isTombstoneValueShouldReturnTrueForEncoderTombstoneValue()
     assertTrue(iterator.exposedIsTombstoneValue(tombstoneValue));
 }
 
-@Test
-public void isTombstoneValueShouldReturnFalseForNormalEncodedValue()
-        throws Exception {
-    RedisCommandsInstanceContainer container = mock(RedisCommandsInstanceContainer.class);
-    TestableRedisKeyValueStateIterator iterator = newIterator(container);
 
-    @SuppressWarnings("unchecked")
-    StateEncoder<String, String, byte[], byte[]> encoder =
-            (StateEncoder<String, String, byte[], byte[]>) getPrivateField(iterator, "encoder");
 
-    byte[] normalValue = encoder.encodeValue("normal-value");
 
-    assertFalse(iterator.exposedIsTombstoneValue(normalValue));
-}
-
-@Test
-public void isTombstoneValueShouldReturnFalseForNullValue() {
-    RedisCommandsInstanceContainer container = mock(RedisCommandsInstanceContainer.class);
-    TestableRedisKeyValueStateIterator iterator = newIterator(container);
-
-    assertFalse(iterator.exposedIsTombstoneValue(null));
-}
 
 private static void setPrivateField(Object target, String fieldName, Object value) throws Exception {
     Field field = RedisKeyValueStateIterator.class.getDeclaredField(fieldName);

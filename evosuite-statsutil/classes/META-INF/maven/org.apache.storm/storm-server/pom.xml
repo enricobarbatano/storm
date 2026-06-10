@@ -17,25 +17,16 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>2.7.1</version>
-        <relativePath>../pom.xml</relativePath>
+        <version>2.2.0</version>
+        <relativePath>..</relativePath>
     </parent>
-
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>storm-server</artifactId>
-
-    <properties>
-        <jacocoArgLine></jacocoArgLine>
-        <storm-server.test.introspection.argLine>--add-opens java.base/java.lang=ALL-UNNAMED</storm-server.test.introspection.argLine>
-    </properties>
 
     <dependencies>
         <dependency>
@@ -53,28 +44,19 @@
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-core</artifactId>
         </dependency>
-
-        <dependency>
-            <groupId>io.dropwizard.metrics</groupId>
-            <artifactId>metrics-jmx</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-exec</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
         </dependency>
-
         <dependency>
             <groupId>com.google.auto.service</groupId>
             <artifactId>auto-service</artifactId>
             <optional>true</optional>
         </dependency>
-
         <dependency>
             <groupId>org.rocksdb</groupId>
             <artifactId>rocksdbjni</artifactId>
@@ -88,8 +70,8 @@
 
         <!-- servlet -->
         <dependency>
-            <groupId>jakarta.servlet</groupId>
-            <artifactId>jakarta.servlet-api</artifactId>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
         </dependency>
 
         <!-- test -->
@@ -98,7 +80,6 @@
             <artifactId>curator-test</artifactId>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-client</artifactId>
@@ -107,101 +88,53 @@
             <scope>test</scope>
         </dependency>
 
-        <!--
-        Necessario per alcuni test su StatsUtil che accedono a classi generated/thrift.
-        In particolare evita errori del tipo:
-        cannot access org.apache.storm.thrift.TBase
-        -->
-        <dependency>
-            <groupId>org.apache.storm</groupId>
-            <artifactId>storm-shaded-deps</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest</artifactId>
+            <artifactId>java-hamcrest</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
         </dependency>
-
         <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
         </dependency>
-
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-collections4</artifactId>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
         </dependency>
-
         <dependency>
-            <groupId>net.minidev</groupId>
-            <artifactId>json-smart</artifactId>
+            <groupId>com.googlecode.json-simple</groupId>
+            <artifactId>json-simple</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
         </dependency>
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
             <scope>test</scope>
         </dependency>
-
-        <dependency>
-            <groupId>org.junit.vintage</groupId>
-            <artifactId>junit-vintage-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- Necessario perché Randoop genera import org.junit.Test e assert JUnit 4. -->
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.13.2</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-    <groupId>org.evosuite</groupId>
-    <artifactId>evosuite-standalone-runtime</artifactId>
-    <version>1.0.6</version>
-    <scope>test</scope>
-</dependency>
-
     </dependencies>
 
     <build>
         <sourceDirectory>src/main/java</sourceDirectory>
         <testSourceDirectory>src/test/java</testSourceDirectory>
-
         <resources>
             <resource>
                 <directory>../</directory>
@@ -215,28 +148,23 @@
                     <include>NOTICE</include>
                 </includes>
             </resource>
-
             <resource>
                 <directory>${basedir}/src/main/resources</directory>
             </resource>
         </resources>
-
         <testResources>
             <testResource>
                 <directory>src/test/resources</directory>
             </testResource>
         </testResources>
-
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <reuseForks>false</reuseForks>
-                    <argLine>${jacocoArgLine} ${storm-server.test.introspection.argLine} -Xmx3g -XX:+HeapDumpOnOutOfMemoryError</argLine>
+                    <forkCount>1</forkCount>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
@@ -246,7 +174,6 @@
                     </reportsDirectories>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
@@ -254,18 +181,15 @@
                     <reportsDirectory>${project.build.directory}/test-reports</reportsDirectory>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <!-- Note - the version would be inherited -->
+                <!--Note - the version would be inherited-->
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
@@ -279,7 +203,6 @@
                     </execution>
                 </executions>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
@@ -293,105 +216,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>milestone4-quality</id>
-
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.jacoco</groupId>
-                        <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>0.8.12</version>
-
-                        <executions>
-                            <execution>
-                                <id>prepare-agent</id>
-                                <goals>
-                                    <goal>prepare-agent</goal>
-                                </goals>
-                                <configuration>
-                                    <propertyName>jacocoArgLine</propertyName>
-                                    <destFile>${project.build.directory}/jacoco.exec</destFile>
-                                </configuration>
-                            </execution>
-
-                            <execution>
-                                <id>report</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>report</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>pit-statsutil</id>
-
-            <properties>
-                <jacocoArgLine></jacocoArgLine>
-            </properties>
-
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.pitest</groupId>
-                        <artifactId>pitest-maven</artifactId>
-                        <version>1.19.4</version>
-
-                        <dependencies>
-                            <dependency>
-                                <groupId>org.pitest</groupId>
-                                <artifactId>pitest-junit5-plugin</artifactId>
-                                <version>1.2.3</version>
-                            </dependency>
-                        </dependencies>
-
-                        <configuration>
-                            <targetClasses>
-                                <param>org.apache.storm.stats.StatsUtil*</param>
-                            </targetClasses>
-
-                            <targetTests>
-                                <param>org.apache.storm.stats.StatsUtil*Test</param>
-                                <param>org.apache.storm.stats.llm.*Test</param>
-                                <param>org.apache.storm.stats.randoop.*Test</param>
-                            </targetTests>
-
-                            <excludedGroups combine.self="override">
-                                <param>IntegrationTest</param>
-                                <param>PerformanceTest</param>
-                            </excludedGroups>
-
-                            <excludedTestClasses>
-                          
-                               
-                                <param>**/*_ESTest*</param>
-                                <param>**/*_ESTest_scaffolding*</param>
-                                <param>**/*Harness*</param>
-                                <param>**/*IT*</param>
-                                <param>**/*Integration*</param>
-                            </excludedTestClasses>
-
-                            <outputFormats>
-                                <param>HTML</param>
-                                <param>XML</param>
-                            </outputFormats>
-
-                            <timestampedReports>false</timestampedReports>
-                            <threads>1</threads>
-                            <timeoutConstant>15000</timeoutConstant>
-                            <failWhenNoMutations>false</failWhenNoMutations>
-                            <verbose>true</verbose>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

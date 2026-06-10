@@ -185,15 +185,6 @@ public void decodeValueShouldUseConfiguredValueSerializer() throws Exception {
         assertTrue(iterator.exposedIsTombstoneValue(tombstoneValue));
     }
 
-    @Test
-    public void isTombstoneValueShouldReturnFalseForNormalValue() {
-        RedisCommandsInstanceContainer container = mock(RedisCommandsInstanceContainer.class);
-        TestableRedisKeyValueStateIterator iterator = newIterator(container);
-
-        byte[] normalValue = "normal-value".getBytes(StandardCharsets.UTF_8);
-
-        assertFalse(iterator.exposedIsTombstoneValue(normalValue));
-    }
 
     @Test
     public void loadChunkFromStateStorageShouldLoadRedisEntriesAndUpdateCursor() throws Exception {

@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+Implementation-Title: storm-server
+Implementation-Version: 2.2.0
+Built-By: ec2-user
+Specification-Vendor: The Apache Software Foundation
+Specification-Title: storm-server
+Implementation-Vendor-Id: org.apache.storm
+Created-By: Apache Maven 3.6.3
+Build-Jdk: 1.8.0_251
+Specification-Version: 2.2
+Implementation-URL: https://storm.apache.org/storm-server
+Implementation-Vendor: The Apache Software Foundation
+
