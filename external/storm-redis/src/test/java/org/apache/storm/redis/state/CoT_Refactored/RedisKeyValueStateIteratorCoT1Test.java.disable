@@ -1,0 +1,345 @@
+//###Test START##
+package org.apache.storm.redis.state.CoT_Refactored;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.lang.reflect.Proxy;
+import java.nio.charset.StandardCharsets;
+import java.util.AbstractMap;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.storm.redis.common.commands.RedisCommands;
+import org.apache.storm.redis.common.container.RedisCommandsInstanceContainer;
+import org.apache.storm.redis.state.RedisKeyValueStateIterator;
+import org.apache.storm.state.DefaultStateEncoder;
+import org.apache.storm.state.Serializer;
+import org.junit.jupiter.api.Test;
+
+import redis.clients.jedis.params.ScanParams;
+import redis.clients.jedis.resps.ScanResult;
+
+public class RedisKeyValueStateIteratorCoT1Test {
+
+    private static final byte[] NAMESPACE = "test-namespace".getBytes(StandardCharsets.UTF_8);
+    private static final StringSerializer STRING_SERIALIZER = new StringSerializer();
+
+    /**
+     * Public method extracted from RedisKeyValueStateIterator:
+     * RedisKeyValueStateIterator(byte[] namespace,
+     *                            RedisCommandsInstanceContainer container,
+     *                            Iterator<Map.Entry<byte[], byte[]>> pendingPrepareIterator,
+     *                            Iterator<Map.Entry<byte[], byte[]>> pendingCommitIterator,
+     *                            int chunkSize,
+     *                            Serializer<K> keySerializer,
+     *                            Serializer<V> valueSerializer)
+     */
+    @Test
+    void constructorCreatesIteratorWithInitialEndOfStorageState() {
+        RecordingRedisContainer container = new RecordingRedisContainer(emptyScanResult());
+
+        ExposedIterator iterator = new ExposedIterator(container);
+
+        assertTrue(iterator.callIsEndOfDataFromStorage());
+        assertEquals(0, container.getInstanceCalls);
+        assertEquals(0, container.returnInstanceCalls);
+    }
+
+    @Test
+    void constructorAcceptsEmptyPendingIteratorsAndChunkSizeOne() {
+        RecordingRedisContainer container = new RecordingRedisContainer(emptyScanResult());
+
+        ExposedIterator iterator = new ExposedIterator(
+            container,
+            Collections.<Map.Entry<byte[], byte[]>>emptyList().iterator(),
+            Collections.<Map.Entry<byte[], byte[]>>emptyList().iterator(),
+            1
+        );
+
+        assertTrue(iterator.callIsEndOfDataFromStorage());
+    }
+
+    @Test
+    void decodeKeyReturnsDeserializedKey() {
+        ExposedIterator iterator = new ExposedIterator(new RecordingRedisContainer(emptyScanResult()));
+
+        String decoded = iterator.callDecodeKey("key".getBytes(StandardCharsets.UTF_8));
+
+        assertEquals("key", decoded);
+    }
+
+    @Test
+    void decodeValueReturnsDeserializedEncodedValue() {
+        ExposedIterator iterator = new ExposedIterator(new RecordingRedisContainer(emptyScanResult()));
+        DefaultStateEncoder<String, String> encoder = new DefaultStateEncoder<>(STRING_SERIALIZER, STRING_SERIALIZER);
+        byte[] encodedValue = encoder.encodeValue("value");
+
+        String decoded = iterator.callDecodeValue(encodedValue);
+
+        assertEquals("value", decoded);
+    }
+
+    @Test
+    void tombstoneValueIsRecognizedAsTombstone() {
+        ExposedIterator iterator = new ExposedIterator(new RecordingRedisContainer(emptyScanResult()));
+        DefaultStateEncoder<String, String> encoder = new DefaultStateEncoder<>(STRING_SERIALIZER, STRING_SERIALIZER);
+
+        assertTrue(iterator.callIsTombstoneValue(encoder.getTombstoneValue()));
+    }
+
+    @Test
+    void normalValueIsNotRecognizedAsTombstone() {
+        ExposedIterator iterator = new ExposedIterator(new RecordingRedisContainer(emptyScanResult()));
+
+        assertFalse(iterator.callIsTombstoneValue("normal-value".getBytes(StandardCharsets.UTF_8)));
+    }
+
+    @Test
+    void loadChunkFromStateStorageReadsEntriesFromRedisAndReturnsInstance() {
+        byte[] key = "key-1".getBytes(StandardCharsets.UTF_8);
+        DefaultStateEncoder<String, String> encoder = new DefaultStateEncoder<>(STRING_SERIALIZER, STRING_SERIALIZER);
+        byte[] encodedValue = encoder.encodeValue("value-1");
+        Map.Entry<byte[], byte[]> entry = new AbstractMap.SimpleEntry<>(key, encodedValue);
+        RecordingRedisContainer container = new RecordingRedisContainer(scanResultWithEntries(Collections.singletonList(entry)));
+        ExposedIterator iterator = new ExposedIterator(container);
+
+        Iterator<Map.Entry<byte[], byte[]>> chunk = iterator.callLoadChunkFromStateStorage();
+
+        assertNotNull(chunk);
+        assertTrue(chunk.hasNext());
+        Map.Entry<byte[], byte[]> loaded = chunk.next();
+        assertArrayEquals(key, loaded.getKey());
+        assertEquals("value-1", iterator.callDecodeValue(loaded.getValue()));
+        assertSame(container.commands, container.returnedInstance);
+        assertEquals(1, container.getInstanceCalls);
+        assertEquals(1, container.returnInstanceCalls);
+    }
+
+    @Test
+    void isEndOfDataFromStorageIsFalseWhileLoadedChunkStillHasEntries() {
+        Map.Entry<byte[], byte[]> entry = new AbstractMap.SimpleEntry<>(
+            "key-2".getBytes(StandardCharsets.UTF_8),
+            new DefaultStateEncoder<String, String>(STRING_SERIALIZER, STRING_SERIALIZER).encodeValue("value-2")
+        );
+        RecordingRedisContainer container = new RecordingRedisContainer(scanResultWithEntries(Collections.singletonList(entry)));
+        ExposedIterator iterator = new ExposedIterator(container);
+
+        Iterator<Map.Entry<byte[], byte[]>> chunk = iterator.callLoadChunkFromStateStorage();
+
+        assertTrue(chunk.hasNext());
+        assertFalse(iterator.callIsEndOfDataFromStorage());
+    }
+
+    @Test
+    void isEndOfDataFromStorageBecomesTrueAfterLoadedChunkIsConsumedAndCursorReturnsToStart() {
+        Map.Entry<byte[], byte[]> entry = new AbstractMap.SimpleEntry<>(
+            "key-3".getBytes(StandardCharsets.UTF_8),
+            new DefaultStateEncoder<String, String>(STRING_SERIALIZER, STRING_SERIALIZER).encodeValue("value-3")
+        );
+        RecordingRedisContainer container = new RecordingRedisContainer(scanResultWithEntries(Collections.singletonList(entry)));
+        ExposedIterator iterator = new ExposedIterator(container);
+        Iterator<Map.Entry<byte[], byte[]>> chunk = iterator.callLoadChunkFromStateStorage();
+
+        assertTrue(chunk.hasNext());
+        chunk.next();
+
+        assertFalse(chunk.hasNext());
+        assertTrue(iterator.callIsEndOfDataFromStorage());
+    }
+
+    @Test
+    void loadChunkFromStateStorageHandlesNullResultListAsNoCachedChunk() {
+        RecordingRedisContainer container = new RecordingRedisContainer(scanResultWithNullEntries());
+        ExposedIterator iterator = new ExposedIterator(container);
+
+        Iterator<Map.Entry<byte[], byte[]>> chunk = iterator.callLoadChunkFromStateStorage();
+
+        assertNull(chunk);
+        assertTrue(iterator.callIsEndOfDataFromStorage());
+        assertEquals(1, container.getInstanceCalls);
+        assertEquals(1, container.returnInstanceCalls);
+    }
+
+    @Test
+    void loadChunkFromStateStorageReturnsRedisInstanceEvenWhenHscanThrows() {
+        RuntimeException failure = new RuntimeException("hscan failure");
+        RecordingRedisContainer container = new RecordingRedisContainer(failure);
+        ExposedIterator iterator = new ExposedIterator(container);
+
+        RuntimeException thrown = assertThrows(RuntimeException.class, iterator::callLoadChunkFromStateStorage);
+
+        assertSame(failure, thrown);
+        assertSame(container.commands, container.returnedInstance);
+        assertEquals(1, container.getInstanceCalls);
+        assertEquals(1, container.returnInstanceCalls);
+    }
+
+    private static ScanResult<Map.Entry<byte[], byte[]>> emptyScanResult() {
+        return scanResultWithEntries(Collections.<Map.Entry<byte[], byte[]>>emptyList());
+    }
+
+    private static ScanResult<Map.Entry<byte[], byte[]>> scanResultWithEntries(List<Map.Entry<byte[], byte[]>> entries) {
+        return new ScanResult<>(ScanParams.SCAN_POINTER_START_BINARY, entries);
+    }
+
+    private static ScanResult<Map.Entry<byte[], byte[]>> scanResultWithNullEntries() {
+        return new ScanResult<>(ScanParams.SCAN_POINTER_START_BINARY, null);
+    }
+
+    private static final class ExposedIterator extends RedisKeyValueStateIterator<String, String> {
+
+        ExposedIterator(RecordingRedisContainer container) {
+            this(
+                container,
+                Collections.<Map.Entry<byte[], byte[]>>emptyList().iterator(),
+                Collections.<Map.Entry<byte[], byte[]>>emptyList().iterator(),
+                2
+            );
+        }
+
+        ExposedIterator(RecordingRedisContainer container,
+                        Iterator<Map.Entry<byte[], byte[]>> pendingPrepareIterator,
+                        Iterator<Map.Entry<byte[], byte[]>> pendingCommitIterator,
+                        int chunkSize) {
+            super(NAMESPACE, container, pendingPrepareIterator, pendingCommitIterator,
+                  chunkSize, STRING_SERIALIZER, STRING_SERIALIZER);
+        }
+
+        Iterator<Map.Entry<byte[], byte[]>> callLoadChunkFromStateStorage() {
+            return loadChunkFromStateStorage();
+        }
+
+        boolean callIsEndOfDataFromStorage() {
+            return isEndOfDataFromStorage();
+        }
+
+        String callDecodeKey(byte[] key) {
+            return decodeKey(key);
+        }
+
+        String callDecodeValue(byte[] value) {
+            return decodeValue(value);
+        }
+
+        boolean callIsTombstoneValue(byte[] value) {
+            return isTombstoneValue(value);
+        }
+    }
+
+    private static final class RecordingRedisContainer implements RedisCommandsInstanceContainer {
+        private final RedisCommands commands;
+        private RedisCommands returnedInstance;
+        private int getInstanceCalls;
+        private int returnInstanceCalls;
+
+        RecordingRedisContainer(ScanResult<Map.Entry<byte[], byte[]>> scanResult) {
+            this.commands = redisCommandsReturning(scanResult);
+        }
+
+        RecordingRedisContainer(RuntimeException hscanFailure) {
+            this.commands = redisCommandsThrowing(hscanFailure);
+        }
+
+        @Override
+        public RedisCommands getInstance() {
+            getInstanceCalls++;
+            return commands;
+        }
+
+        @Override
+        public void returnInstance(RedisCommands instance) {
+            returnInstanceCalls++;
+            returnedInstance = instance;
+        }
+
+        @Override
+        public void close() {
+            // No resource is allocated by the in-memory fake container.
+        }
+    }
+
+    private static RedisCommands redisCommandsReturning(ScanResult<Map.Entry<byte[], byte[]>> scanResult) {
+        return (RedisCommands) Proxy.newProxyInstance(
+            RedisCommands.class.getClassLoader(),
+            new Class<?>[] { RedisCommands.class },
+            (proxy, method, args) -> {
+                if ("hscan".equals(method.getName())) {
+                    return scanResult;
+                }
+                return defaultValue(method.getReturnType());
+            }
+        );
+    }
+
+    private static RedisCommands redisCommandsThrowing(RuntimeException failure) {
+        return (RedisCommands) Proxy.newProxyInstance(
+            RedisCommands.class.getClassLoader(),
+            new Class<?>[] { RedisCommands.class },
+            (proxy, method, args) -> {
+                if ("hscan".equals(method.getName())) {
+                    throw failure;
+                }
+                return defaultValue(method.getReturnType());
+            }
+        );
+    }
+
+    private static Object defaultValue(Class<?> returnType) {
+        if (!returnType.isPrimitive()) {
+            return null;
+        }
+        if (boolean.class.equals(returnType)) {
+            return false;
+        }
+        if (byte.class.equals(returnType)) {
+            return (byte) 0;
+        }
+        if (short.class.equals(returnType)) {
+            return (short) 0;
+        }
+        if (int.class.equals(returnType)) {
+            return 0;
+        }
+        if (long.class.equals(returnType)) {
+            return 0L;
+        }
+        if (float.class.equals(returnType)) {
+            return 0.0f;
+        }
+        if (double.class.equals(returnType)) {
+            return 0.0d;
+        }
+        if (char.class.equals(returnType)) {
+            return '\0';
+        }
+        return null;
+    }
+
+    private static final class StringSerializer implements Serializer<String> {
+        @Override
+        public byte[] serialize(String object) {
+            if (object == null) {
+                return null;
+            }
+            return object.getBytes(StandardCharsets.UTF_8);
+        }
+
+        @Override
+        public String deserialize(byte[] bytes) {
+            if (bytes == null) {
+                return null;
+            }
+            return new String(bytes, StandardCharsets.UTF_8);
+        }
+    }
+}
+//###Test END##

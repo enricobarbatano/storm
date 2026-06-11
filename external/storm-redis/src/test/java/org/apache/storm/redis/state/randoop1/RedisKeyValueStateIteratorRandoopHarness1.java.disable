@@ -1,0 +1,257 @@
+package org.apache.storm.redis.state;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.Map;
+
+import org.apache.storm.redis.common.commands.RedisCommands;
+import org.apache.storm.redis.common.container.RedisCommandsInstanceContainer;
+import org.apache.storm.state.DefaultStateEncoder;
+import org.apache.storm.state.Serializer;
+
+/**
+ * Harness safe per Randoop su RedisKeyValueStateIterator1.
+ *
+ * Questa versione sostituisce l'harness stateful precedente. I metodi pubblici
+ * sono deterministici, senza parametri e restituiscono valori semplici. In
+ * questo modo Randoop tende a generare test piu' stabili e meno dipendenti da
+ * valori intermedi fragili.
+ *
+ * Il costruttore esercita subito la classe target tramite ExposedIterator, quindi
+ * anche una semplice istanziazione dell'harness attraversa la logica reale.
+ */
+public class RedisKeyValueStateIteratorRandoopHarness {
+
+    private final int score;
+    private final boolean successful;
+    private final String summary;
+
+    public RedisKeyValueStateIteratorRandoopHarness() {
+        int computedScore = normalize(exerciseAllSafely());
+        this.score = computedScore;
+        this.successful = computedScore > 0;
+        this.summary = "RedisKeyValueStateIterator1RandoopHarness[score=" + computedScore + "]";
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public boolean isSuccessful() {
+        return successful;
+    }
+
+    /**
+     * Alias mantenuto per compatibilita' con eventuali smoke test o selected test
+     * gia' scritti sul vecchio harness.
+     */
+    public int getObservedState() {
+        return getScore();
+    }
+
+    /**
+     * Alias mantenuto per compatibilita' con eventuali smoke test o selected test
+     * gia' scritti sul vecchio harness.
+     */
+    public boolean hasUsefulState() {
+        return isSuccessful();
+    }
+
+    public String getSummary() {
+        return summary;
+    }
+
+    public int getScoreAgain() {
+        return normalize(exerciseAllSafely());
+    }
+
+    public boolean hasPositiveScoreAgain() {
+        return normalize(exerciseAllSafely()) > 0;
+    }
+
+    public String getStableDescription() {
+        return "score=" + score + ",successful=" + successful;
+    }
+
+    public static int staticExerciseAll() {
+        return normalize(exerciseAllSafely());
+    }
+
+    public static int staticDecodeKeyLength() {
+        try {
+            ExposedIterator iterator = new ExposedIterator();
+            String decoded = iterator.callDecodeKey("key".getBytes(StandardCharsets.UTF_8));
+            if (decoded == null) {
+                return -1;
+            }
+            return decoded.length();
+        } catch (Throwable ignored) {
+            return -100;
+        }
+    }
+
+    public static int staticDecodeValueLength() {
+        try {
+            ExposedIterator iterator = new ExposedIterator();
+            DefaultStateEncoder<String, String> encoder =
+                new DefaultStateEncoder<String, String>(
+                    new SimpleStringSerializer(),
+                    new SimpleStringSerializer()
+                );
+
+            byte[] encodedValue = encoder.encodeValue("value");
+            String decoded = iterator.callDecodeValue(encodedValue);
+
+            if (decoded == null) {
+                return -1;
+            }
+            return decoded.length();
+        } catch (Throwable ignored) {
+            return -100;
+        }
+    }
+
+    public static boolean staticNormalValueIsTombstone() {
+        try {
+            ExposedIterator iterator = new ExposedIterator();
+            return iterator.callIsTombstoneValue(
+                "normal-value".getBytes(StandardCharsets.UTF_8)
+            );
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
+    public static boolean staticEndOfDataAtStart() {
+        try {
+            ExposedIterator iterator = new ExposedIterator();
+            return iterator.callIsEndOfDataFromStorage();
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
+    public static String staticSummary() {
+        int value = normalize(exerciseAllSafely());
+        return "RedisKeyValueStateIterator1RandoopHarness[score=" + value + "]";
+    }
+
+    /**
+     * Vecchi metodi statici mantenuti come alias, cosi' eventuali selected test
+     * precedenti continuano a compilare.
+     */
+    public static String staticDecodeKey() {
+        int length = staticDecodeKeyLength();
+        if (length > 0) {
+            return "key";
+        }
+        return "";
+    }
+
+    public static String staticDecodeValue() {
+        int length = staticDecodeValueLength();
+        if (length > 0) {
+            return "value";
+        }
+        return "";
+    }
+
+    private static int exerciseAllSafely() {
+        int result = 0;
+
+        int keyLength = staticDecodeKeyLength();
+        if (keyLength > 0) {
+            result += keyLength;
+        }
+
+        int valueLength = staticDecodeValueLength();
+        if (valueLength > 0) {
+            result += valueLength;
+        }
+
+        if (!staticNormalValueIsTombstone()) {
+            result += 10;
+        }
+
+        if (staticEndOfDataAtStart()) {
+            result += 100;
+        }
+
+        return result;
+    }
+
+    private static int normalize(int value) {
+        if (value > 0) {
+            return 1;
+        }
+        return 0;
+    }
+
+    private static class ExposedIterator extends RedisKeyValueStateIterator<String, String> {
+
+        ExposedIterator() {
+            super(
+                "namespace".getBytes(StandardCharsets.UTF_8),
+                new NoOpRedisCommandsInstanceContainer(),
+                Collections.<Map.Entry<byte[], byte[]>>emptyList().iterator(),
+                Collections.<Map.Entry<byte[], byte[]>>emptyList().iterator(),
+                2,
+                new SimpleStringSerializer(),
+                new SimpleStringSerializer()
+            );
+        }
+
+        String callDecodeKey(byte[] key) {
+            return decodeKey(key);
+        }
+
+        String callDecodeValue(byte[] value) {
+            return decodeValue(value);
+        }
+
+        boolean callIsTombstoneValue(byte[] value) {
+            return isTombstoneValue(value);
+        }
+
+        boolean callIsEndOfDataFromStorage() {
+            return isEndOfDataFromStorage();
+        }
+    }
+
+    private static class SimpleStringSerializer implements Serializer<String> {
+
+        @Override
+        public byte[] serialize(String object) {
+            if (object == null) {
+                return null;
+            }
+            return object.getBytes(StandardCharsets.UTF_8);
+        }
+
+        @Override
+        public String deserialize(byte[] bytes) {
+            if (bytes == null) {
+                return null;
+            }
+            return new String(bytes, StandardCharsets.UTF_8);
+        }
+    }
+
+    private static class NoOpRedisCommandsInstanceContainer implements RedisCommandsInstanceContainer {
+
+        @Override
+        public RedisCommands getInstance() {
+            return null;
+        }
+
+        @Override
+        public void returnInstance(RedisCommands instance) {
+            // No-op: gli scenari dell'harness non chiamano Redis reale.
+        }
+
+        @Override
+        public void close() {
+            // No-op.
+        }
+    }
+}

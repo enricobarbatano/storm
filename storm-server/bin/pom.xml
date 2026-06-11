@@ -116,7 +116,7 @@
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-shaded-deps</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
+            
         </dependency>
 
         <dependency>

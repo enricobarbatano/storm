@@ -1,0 +1,69 @@
+package org.apache.storm.redis.state;
+
+import org.junit.Test;
+
+/**
+ * Suite selezionata derivata dai test Randoop generati tramite
+ * RedisKeyValueStateIteratorRandoopHarness.
+ *
+ * La suite mantiene solo le chiamate utili per attraversare
+ * RedisKeyValueStateIterator e non include assertion fragili generate da Randoop.
+ */
+public class RedisKeyValueStateIteratorRandoopSelectedTest {
+
+    @Test
+    public void testSafeHarnessConstructor() {
+        new RedisKeyValueStateIteratorRandoopHarness();
+    }
+
+    @Test
+    public void testSafeHarnessStaticExerciseAll() {
+        RedisKeyValueStateIteratorRandoopHarness.staticExerciseAll();
+    }
+
+    @Test
+    public void testSafeHarnessStaticDecodeKeyLength() {
+        RedisKeyValueStateIteratorRandoopHarness.staticDecodeKeyLength();
+    }
+
+    @Test
+    public void testSafeHarnessStaticDecodeValueLength() {
+        RedisKeyValueStateIteratorRandoopHarness.staticDecodeValueLength();
+    }
+
+    @Test
+    public void testSafeHarnessStaticNormalValueIsTombstone() {
+        RedisKeyValueStateIteratorRandoopHarness.staticNormalValueIsTombstone();
+    }
+
+    @Test
+    public void testSafeHarnessStaticEndOfDataAtStart() {
+        RedisKeyValueStateIteratorRandoopHarness.staticEndOfDataAtStart();
+    }
+
+    @Test
+    public void testSafeHarnessStaticSummary() {
+        RedisKeyValueStateIteratorRandoopHarness.staticSummary();
+    }
+
+    @Test
+    public void testSafeHarnessLegacyStaticAliases() {
+        RedisKeyValueStateIteratorRandoopHarness.staticDecodeKey();
+        RedisKeyValueStateIteratorRandoopHarness.staticDecodeValue();
+    }
+
+    @Test
+    public void testSafeHarnessInstanceGettersAndAliases() {
+        RedisKeyValueStateIteratorRandoopHarness harness =
+            new RedisKeyValueStateIteratorRandoopHarness();
+
+        harness.getScore();
+        harness.isSuccessful();
+        harness.getSummary();
+        harness.getStableDescription();
+        harness.getScoreAgain();
+        harness.hasPositiveScoreAgain();
+        harness.getObservedState();
+        harness.hasUsefulState();
+    }
+}

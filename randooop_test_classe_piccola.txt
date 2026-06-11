@@ -1,4 +1,0 @@
-Randoop ha generato 200 regression test eseguibili, tutti passanti sulla versione originale C0. Tuttavia, la maggior parte dei test generati risultava ridondante: i test variavano principalmente il contenuto del namespace, il valore di chunkSize e i tipi generici, ma caratterizzavano lo stesso comportamento, cioè il lancio di NullPointerException quando il costruttore riceve dipendenze nulle.
-
-Poiché la suite manuale Category Partition aveva già raggiunto elevata coverage e Mutation Score pari al 100%, Randoop non è stato usato per aumentare l’adequacy strutturale, ma come suite automatica di regressione. È stato quindi selezionato un sottoinsieme rappresentativo di test generati, includendo casi con namespace non vuoto, namespace vuoto, namespace null e chunkSize negativo. Gli altri test Randoop sono stati esclusi perché ridondanti.
-``

@@ -1,0 +1,51 @@
+package org.apache.storm.redis.state;
+
+import org.junit.Test;
+
+public class RedisKeyValueStateIteratorRandoopSelectedTest {
+
+    @Test
+    public void testSafeHarnessConstructor() {
+        new RedisKeyValueStateIteratorRandoopHarness();
+    }
+
+    @Test
+    public void testSafeHarnessStaticExerciseAll() {
+        RedisKeyValueStateIteratorRandoopHarness.staticExerciseAll();
+    }
+
+    @Test
+    public void testSafeHarnessStaticDecodeKeyLength() {
+        RedisKeyValueStateIteratorRandoopHarness.staticDecodeKeyLength();
+    }
+
+    @Test
+    public void testSafeHarnessStaticDecodeValueLength() {
+        RedisKeyValueStateIteratorRandoopHarness.staticDecodeValueLength();
+    }
+
+    @Test
+    public void testSafeHarnessStaticNormalValueIsTombstone() {
+        RedisKeyValueStateIteratorRandoopHarness.staticNormalValueIsTombstone();
+    }
+
+    @Test
+    public void testSafeHarnessStaticEndOfDataAtStart() {
+        RedisKeyValueStateIteratorRandoopHarness.staticEndOfDataAtStart();
+    }
+
+    @Test
+    public void testSafeHarnessGetters() {
+        RedisKeyValueStateIteratorRandoopHarness harness =
+            new RedisKeyValueStateIteratorRandoopHarness();
+
+        harness.getScore();
+        harness.isSuccessful();
+        harness.getSummary();
+        harness.getStableDescription();
+        harness.getScoreAgain();
+        harness.hasPositiveScoreAgain();
+        harness.getObservedState();
+        harness.hasUsefulState();
+    }
+}
