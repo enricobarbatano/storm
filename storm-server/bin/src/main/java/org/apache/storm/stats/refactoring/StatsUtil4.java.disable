@@ -546,8 +546,10 @@ public class StatsUtil {
             Map mm = new HashMap();
 
             Map acked = ClientStatsUtil.getMapByKey(stats, ACKED);
-            for (Object win : acked.keySet()) {
-                mm.put(win, aggSpoutLatAndCount((Map) compLatStats.get(win), (Map) acked.get(win)));
+            for (Object entryObject : acked.entrySet()) {
+                Map.Entry entry = (Map.Entry) entryObject;
+                Object win = entry.getKey();
+                mm.put(win, aggSpoutLatAndCount((Map) compLatStats.get(win), (Map) entry.getValue()));
             }
             mm = swapMapOrder(mm);
             w2compLatWgtAvg = ClientStatsUtil.getMapByKey(mm, COMP_LAT_TOTAL);
@@ -1223,7 +1225,7 @@ public class StatsUtil {
             extractDataFromHb(exec2hostPort, task2component, beats, includeSys, topology, componentId);
         Map<String, Object> compStats = aggregateCompStats(window, includeSys, beatList, componentType(topology, componentId));
         compStats = postAggregateCompStats(compStats);
-        return thriftifyCompPageData(topologyId, topology, componentId, compStats);
+        return thriftifyCompPageData(topologyId, componentId, compStats);
     }
 
     /**
@@ -1992,7 +1994,7 @@ public class StatsUtil {
     }
 
     private static ComponentPageInfo thriftifyCompPageData(
-        String topologyId, StormTopology topology, String compId, Map<String, Object> data) {
+        String topologyId, String compId, Map<String, Object> data) {
         ComponentPageInfo ret = new ComponentPageInfo();
         ret.set_component_id(compId);
 

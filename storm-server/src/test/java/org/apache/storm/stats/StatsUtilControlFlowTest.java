@@ -24,10 +24,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Seconda parte dei test manuali black-box per StatsUtil.
- *
- * Questa classe contiene i test Category Partition spostati dalla classe
- * principale StatsUtilCategoryPartitionTest, senza modificarne la logica.
- *
+
  * I test coprono:
  *
  * F5 - utility semplici;

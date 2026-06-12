@@ -1,7 +1,5 @@
-# This workflow will build a Java project with Maven, and cache/restore any dependencies
-# to improve the workflow execution time.
-# For more information see:
-# https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
+# This workflow will build a Java project with Maven, run tests,
+# generate JaCoCo coverage reports and PIT mutation reports.
 
 name: Java CI with Maven
 
@@ -29,11 +27,96 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Build with Maven
-        run: mvn -B clean install --file pom.xml -Dmaven.test.skip=true -DskipITs -Dcheckstyle.skip=true -Drat.skip=true
+      - name: Build with Maven (skip tests)
+        run: >
+          mvn -B clean install --file pom.xml
+          -Dmaven.test.skip=true
+          -DskipITs
+          -Dcheckstyle.skip=true
+          -Drat.skip=true
 
-      - name: Run storm-server tests except EvoSuite
-        run: mvn -B -pl :storm-server "-Dtest=*Test,!*_ESTest" test -Dcheckstyle.skip=true -Drat.skip=true
+      # ------------------------------------------------------------
+      # JaCoCo - storm-server
+      # ------------------------------------------------------------
+      - name: Run storm-server tests with JaCoCo
+        run: >
+          mvn -B -pl :storm-server
+          org.jacoco:jacoco-maven-plugin:0.8.11:prepare-agent
+          "-Dtest=*Test,!*_ESTest"
+          test
+          org.jacoco:jacoco-maven-plugin:0.8.11:report
+          -Dcheckstyle.skip=true
+          -Drat.skip=true
+          -DskipITs
 
-      - name: Run storm-redis tests except EvoSuite
-        run: mvn -B -pl :storm-redis "-Dtest=*Test,!*_ESTest" test -Dcheckstyle.skip=true -Drat.skip=true
+      # ------------------------------------------------------------
+      # JaCoCo - storm-redis
+      # ------------------------------------------------------------
+      - name: Run storm-redis tests with JaCoCo
+        run: >
+          mvn -B -pl :storm-redis
+          org.jacoco:jacoco-maven-plugin:0.8.11:prepare-agent
+          "-Dtest=*Test,!*_ESTest"
+          test
+          org.jacoco:jacoco-maven-plugin:0.8.11:report
+          -Dcheckstyle.skip=true
+          -Drat.skip=true
+          -DskipITs
+
+      # ------------------------------------------------------------
+      # PIT - storm-server (mirato a StatsUtil)
+      # ------------------------------------------------------------
+      - name: Run PIT on storm-server (StatsUtil)
+        run: >
+          mvn -B -pl :storm-server
+          org.pitest:pitest-maven:mutationCoverage
+          -DtargetClasses=org.apache.storm.stats.StatsUtil
+          -DtargetTests=org.apache.storm.stats.*Test
+          -DexcludedTestClasses=*_ESTest,*_ESTest_scaffolding
+          -Dcheckstyle.skip=true
+          -Drat.skip=true
+          -DskipITs
+
+      # ------------------------------------------------------------
+      # PIT - storm-redis (mirato a RedisKeyValueStateIterator)
+      # ------------------------------------------------------------
+      - name: Run PIT on storm-redis (RedisKeyValueStateIterator)
+        run: >
+          mvn -B -pl :storm-redis
+          org.pitest:pitest-maven:mutationCoverage
+          -DtargetClasses=org.apache.storm.redis.state.RedisKeyValueStateIterator
+          -DtargetTests=org.apache.storm.redis.state.*Test
+          -DexcludedTestClasses=*_ESTest,*_ESTest_scaffolding
+          -Dcheckstyle.skip=true
+          -Drat.skip=true
+          -DskipITs
+
+      # ------------------------------------------------------------
+      # Upload artifacts - JaCoCo
+      # ------------------------------------------------------------
+      - name: Upload JaCoCo report - storm-server
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-storm-server
+          path: storm-server/target/site/jacoco
+
+      - name: Upload JaCoCo report - storm-redis
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-storm-redis
+          path: external/storm-redis/target/site/jacoco
+
+      # ------------------------------------------------------------
+      # Upload artifacts - PIT
+      # ------------------------------------------------------------
+      - name: Upload PIT report - storm-server
+        uses: actions/upload-artifact@v4
+        with:
+          name: pit-storm-server
+          path: storm-server/target/pit-reports
+
+      - name: Upload PIT report - storm-redis
+        uses: actions/upload-artifact@v4
+        with:
+          name: pit-storm-redis
+          path: external/storm-redis/target/pit-reports

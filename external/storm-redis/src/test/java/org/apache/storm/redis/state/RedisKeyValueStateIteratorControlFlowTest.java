@@ -21,9 +21,7 @@ import org.mockito.MockitoAnnotations;
 /**
  * Seconda iterazione dei test manuali per RedisKeyValueStateIterator.
  *
- * Questi test sono stati spostati fuori dalla classe Category Partition
- * principale per isolare i controlli sui metodi di decodifica e tombstone:
- *
+
  * - decodeKey(byte[]);
  * - decodeValue(byte[]);
  * - isTombstoneValue(byte[]).
