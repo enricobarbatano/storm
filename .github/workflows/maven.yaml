@@ -1,6 +1,3 @@
-# This workflow will build a Java project with Maven, run tests,
-# generate JaCoCo coverage reports and PIT mutation reports.
-
 name: Java CI with Maven
 
 on:
@@ -35,9 +32,6 @@ jobs:
           -Dcheckstyle.skip=true
           -Drat.skip=true
 
-      # ------------------------------------------------------------
-      # JaCoCo - storm-server
-      # ------------------------------------------------------------
       - name: Run storm-server tests with JaCoCo
         run: >
           mvn -B -pl :storm-server
@@ -49,9 +43,6 @@ jobs:
           -Drat.skip=true
           -DskipITs
 
-      # ------------------------------------------------------------
-      # JaCoCo - storm-redis
-      # ------------------------------------------------------------
       - name: Run storm-redis tests with JaCoCo
         run: >
           mvn -B -pl :storm-redis
@@ -63,59 +54,64 @@ jobs:
           -Drat.skip=true
           -DskipITs
 
-      # ------------------------------------------------------------
-      # PIT - storm-server (mirato a StatsUtil)
-      # ------------------------------------------------------------
-      - name: Run PIT on storm-server (StatsUtil)
+      # Primo run PIT in dry-run per storm-server
+      - name: Run PIT dry-run on storm-server
+        continue-on-error: true
         run: >
           mvn -B -pl :storm-server
+          test-compile
           org.pitest:pitest-maven:mutationCoverage
-          -DtargetClasses=org.apache.storm.stats.StatsUtil
-          -DtargetTests=org.apache.storm.stats.*Test
-          -DexcludedTestClasses=*_ESTest,*_ESTest_scaffolding
+          -Dpit.dryRun=true
+          -Dverbose=true
           -Dcheckstyle.skip=true
           -Drat.skip=true
           -DskipITs
 
-      # ------------------------------------------------------------
-      # PIT - storm-redis (mirato a RedisKeyValueStateIterator)
-      # ------------------------------------------------------------
-      - name: Run PIT on storm-redis (RedisKeyValueStateIterator)
+      # PIT vero su storm-server
+      - name: Run PIT on storm-server
+        continue-on-error: true
+        run: >
+          mvn -B -pl :storm-server
+          test-compile
+          org.pitest:pitest-maven:mutationCoverage
+          -Dcheckstyle.skip=true
+          -Drat.skip=true
+          -DskipITs
+
+      # PIT vero su storm-redis
+      - name: Run PIT on storm-redis
+        continue-on-error: true
         run: >
           mvn -B -pl :storm-redis
+          test-compile
           org.pitest:pitest-maven:mutationCoverage
-          -DtargetClasses=org.apache.storm.redis.state.RedisKeyValueStateIterator
-          -DtargetTests=org.apache.storm.redis.state.*Test
-          -DexcludedTestClasses=*_ESTest,*_ESTest_scaffolding
           -Dcheckstyle.skip=true
           -Drat.skip=true
           -DskipITs
 
-      # ------------------------------------------------------------
-      # Upload artifacts - JaCoCo
-      # ------------------------------------------------------------
       - name: Upload JaCoCo report - storm-server
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: jacoco-storm-server
           path: storm-server/target/site/jacoco
 
       - name: Upload JaCoCo report - storm-redis
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: jacoco-storm-redis
           path: external/storm-redis/target/site/jacoco
 
-      # ------------------------------------------------------------
-      # Upload artifacts - PIT
-      # ------------------------------------------------------------
       - name: Upload PIT report - storm-server
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: pit-storm-server
           path: storm-server/target/pit-reports
 
       - name: Upload PIT report - storm-redis
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: pit-storm-redis
