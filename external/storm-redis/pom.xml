@@ -246,72 +246,52 @@
         </profile>
 
         <profile>
-            <id>pit-redis-iterator</id>
+    <id>pit-redis</id>
 
-            <properties>
-                <jacocoArgLine></jacocoArgLine>
-            </properties>
+    <properties>
+        <argLine></argLine>
+        <jacocoArgLine></jacocoArgLine>
+    </properties>
 
-            <build>
-                <plugins>
-                    <plugin>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.pitest</groupId>
+                <artifactId>pitest-maven</artifactId>
+                <version>1.25.7</version>
+
+                <dependencies>
+                    <dependency>
                         <groupId>org.pitest</groupId>
-                        <artifactId>pitest-maven</artifactId>
-                        <version>1.19.4</version>
+                        <artifactId>pitest-junit5-plugin</artifactId>
+                        <version>1.2.3</version>
+                    </dependency>
+                </dependencies>
 
-                        <dependencies>
-                            <dependency>
-                                <groupId>org.pitest</groupId>
-                                <artifactId>pitest-junit5-plugin</artifactId>
-                                <version>1.2.3</version>
-                            </dependency>
-                        </dependencies>
+                <configuration>
+                    <targetClasses>
+                        <param>org.apache.storm.redis.state.RedisKeyValueStateIterator</param>
+                    </targetClasses>
 
-                        <configuration>
-                            <targetClasses>
-                                <param>org.apache.storm.redis.state.RedisKeyValueStateIterator*</param>
-                            </targetClasses>
+                    <excludedGroups combine.self="override">
+                        <param>IntegrationTest</param>
+                        <param>PerformanceTest</param>
+                    </excludedGroups>
 
-                            <targetTests>
-                                 <param>org.apache.storm.redis.state.RedisKeyValueStateIterator*Test</param>
-                            </targetTests>
+                    <outputFormats>
+                        <param>HTML</param>
+                        <param>XML</param>
+                    </outputFormats>
 
-                            <!--
-                                Override dei gruppi ereditati dal parent.
-                                Senza questo blocco PIT riceveva un tag isolato "|",
-                                causando:
-                                Unable to parse tag expression "|"
-                            -->
-                            <excludedGroups combine.self="override">
-                                <param>IntegrationTest</param>
-                                <param>PerformanceTest</param>
-                            </excludedGroups>
-
-                            <excludedTestClasses>
-                                                        
-                          
-                                <param>**/*_ESTest*</param>
-                                <param>**/*_ESTest_scaffolding*</param>
-                                <param>**/*Harness*</param>
-                                <param>**/*IT*</param>
-                                <param>**/*Integration*</param>
-
-                            </excludedTestClasses>
-
-                            <outputFormats>
-                                <param>HTML</param>
-                                <param>XML</param>
-                            </outputFormats>
-
-                            <timestampedReports>false</timestampedReports>
-                            <threads>1</threads>
-                            <timeoutConstant>10000</timeoutConstant>
-                            <failWhenNoMutations>false</failWhenNoMutations>
-                            <verbose>true</verbose>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
+                    <timestampedReports>false</timestampedReports>
+                    <threads>1</threads>
+                    <timeoutConstant>10000</timeoutConstant>
+                    <failWhenNoMutations>false</failWhenNoMutations>
+                    <verbose>true</verbose>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</profile>
     </profiles>
 </project>
