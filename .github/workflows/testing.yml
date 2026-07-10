@@ -1,0 +1,38 @@
+name: Milestone 4 - Testing & Refactoring CI
+
+# Il workflow si attiva ad ogni push sul branch dedicato alla Milestone 4 [2]
+on:
+  push:
+    branches: [ milestone4-refactoring ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 11
+        # Storm 2.7.1 richiede Java 11/17; JDK 11 è usata per garantire compatibilità con il bytecode [5]
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build reactor (skipping global tests)
+        # Build completa necessaria per produrre correttamente i moduli shaded prima dei test [3, 6]
+        run: mvn -B clean install -Dmaven.test.skip=true -DskipITs -Dcheckstyle.skip=true -Drat.skip=true
+
+      - name: Run Module Tests (Iterator & StatsUtil)
+        # Esecuzione mirata dei test manuali, LLM e Randoop per i moduli coinvolti [3, 7]
+        # Vengono esclusi esplicitamente i test EvoSuite (!*_ESTest) per evitare fallimenti strutturali [4]
+        run: |
+          mvn -B -pl :storm-server "-Dtest=*Test,!*_ESTest" test -Dcheckstyle.skip=true -Drat.skip=true
+          mvn -B -pl :storm-redis "-Dtest=*Test,!*_ESTest" test -Dcheckstyle.skip=true -Drat.skip=true
+
+      - name: JaCoCo Coverage Report
+        # Generazione dei report di copertura per validare l'Adequacy Growth nelle classi C_X [8]
+        if: always() # Esegue anche se i test falliscono per analizzare i gap di copertura
+        run: mvn jacoco:report -pl :storm-server,:storm-redis
