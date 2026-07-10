@@ -6,9 +6,10 @@ import java.util.Map.Entry;
 
 import org.apache.storm.redis.common.commands.RedisCommands;
 import org.apache.storm.redis.common.container.RedisCommandsInstanceContainer;
+import org.apache.storm.state.DefaultStateEncoder;
 import org.apache.storm.state.Serializer;
 import org.junit.After;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -19,10 +20,10 @@ import org.mockito.MockitoAnnotations;
  * Test aggiunto dopo l'analisi PIT.
  *
  * Il mutante sopravvissuto sostituiva il valore di ritorno di
- * isTombstoneValue(byte[]) con true.
+ * isTombstoneValue(byte[]) con false.
  *
- * Questo test copre il caso negativo: un valore normale, diverso dal tombstone,
- * non deve essere riconosciuto come tombstone.
+ * Questo test copre il caso positivo: un valore uguale al tombstone
+ * deve essere riconosciuto come tombstone.
  */
 public class RedisKeyValueStateIteratorMutationTest {
 
@@ -70,9 +71,12 @@ public class RedisKeyValueStateIteratorMutationTest {
     }
 
     @Test
-    public void normalValueIsNotRecognizedAsTombstone() {
-        byte[] normalValue = "valore-normale".getBytes(StandardCharsets.UTF_8);
+    public void tombstoneValueIsRecognizedAsTombstone() {
+        DefaultStateEncoder<String, String> encoder =
+            new DefaultStateEncoder<>(keySerializer, valueSerializer);
 
-        assertFalse(iterator.isTombstoneValue(normalValue));
+        byte[] tombstoneValue = encoder.getTombstoneValue();
+
+        assertTrue(iterator.isTombstoneValue(tombstoneValue));
     }
 }
