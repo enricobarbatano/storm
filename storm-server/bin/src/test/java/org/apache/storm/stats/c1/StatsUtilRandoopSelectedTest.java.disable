@@ -1,0 +1,379 @@
+package org.apache.storm.stats.c1;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
+import org.junit.runners.MethodSorters;
+
+
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+public class StatsUtilRandoopSelectedTest {
+
+    public static boolean debug = false;
+
+    public void assertBooleanArrayEquals(boolean[] expectedArray, boolean[] actualArray) {
+        if (expectedArray.length != actualArray.length) {
+            throw new AssertionError(
+                    "Array lengths differ: "
+                            + expectedArray.length
+                            + " != "
+                            + actualArray.length);
+        }
+        for (int i = 0; i < expectedArray.length; i++) {
+            if (expectedArray[i] != actualArray[i]) {
+                throw new AssertionError(
+                        "Arrays differ at index "
+                                + i
+                                + ": "
+                                + expectedArray[i]
+                                + " != "
+                                + actualArray[i]);
+            }
+        }
+    }
+
+    // Da copiare da StatsUtilRandoop0
+
+    @Test
+    public void test003() throws Throwable {
+        if (debug)
+            System.out.format("%n%s%n", "StatsUtilRandoop0.test003");
+        java.util.Map map0 = null;
+        java.util.Map map1 = null;
+        java.util.Map<java.util.List<java.lang.Integer>, java.util.Map<java.lang.String, java.lang.Object>> intListMap2 = null;
+        org.apache.storm.generated.StormTopology stormTopology4 = null;
+        java.util.List<java.util.Map<java.lang.String, java.lang.Object>> strMapList6 = org.apache.storm.stats.StatsUtil.extractDataFromHb(map0, map1, intListMap2, true, stormTopology4, "");
+        org.junit.Assert.assertNotNull(strMapList6);
+    }
+
+    @Test
+    public void test011() throws Throwable {
+        if (debug)
+            System.out.format("%n%s%n", "StatsUtilRandoop0.test011");
+        java.util.Map<java.util.List<java.lang.String>, java.lang.Double> strListMap0 = null;
+        java.util.Map<java.util.List<java.lang.String>, java.lang.Double> strListMap1 = null;
+        java.util.Map<java.util.List<java.lang.String>, java.lang.Long> strListMap2 = null;
+        java.util.Map<java.lang.String, java.lang.Number> strMap3 = org.apache.storm.stats.StatsUtil.aggBoltLatAndCount(strListMap0, strListMap1, strListMap2);
+        java.util.Map<java.util.List<java.lang.String>, java.lang.Double> strListMap4 = null;
+        java.util.Map<java.util.List<java.lang.String>, java.lang.Double> strListMap5 = null;
+        java.util.Map<java.util.List<java.lang.String>, java.lang.Long> strListMap6 = null;
+        java.util.Map<java.lang.String, java.lang.Number> strMap7 = org.apache.storm.stats.StatsUtil.aggBoltLatAndCount(strListMap4, strListMap5, strListMap6);
+        java.util.Map<java.util.List<java.lang.Integer>, java.util.Map<java.lang.String, java.lang.Object>> intListMap8 = null;
+        org.apache.storm.generated.StormTopology stormTopology10 = null;
+        java.util.List<java.util.Map<java.lang.String, java.lang.Object>> strMapList11 = org.apache.storm.stats.StatsUtil.extractDataFromHb((java.util.Map) strListMap1, (java.util.Map) strMap7, intListMap8, false, stormTopology10);
+        org.apache.storm.generated.ExecutorSummary[] executorSummaryArray12 = new org.apache.storm.generated.ExecutorSummary[] {};
+        java.util.ArrayList<org.apache.storm.generated.ExecutorSummary> executorSummaryList13 = new java.util.ArrayList<org.apache.storm.generated.ExecutorSummary>();
+        boolean boolean14 = java.util.Collections.addAll((java.util.Collection<org.apache.storm.generated.ExecutorSummary>) executorSummaryList13, executorSummaryArray12);
+        java.util.Map<java.lang.String, java.util.Map> strMap16 = org.apache.storm.stats.StatsUtil.spoutStreamsStats((java.util.List<org.apache.storm.generated.ExecutorSummary>) executorSummaryList13, false);
+        java.util.Map<java.util.List<java.lang.Integer>, java.util.Map<java.lang.String, java.lang.Object>> intListMap17 = null;
+        org.apache.storm.generated.StormTopology stormTopology19 = null;
+        java.util.List<java.util.Map<java.lang.String, java.lang.Object>> strMapList20 = org.apache.storm.stats.StatsUtil.extractDataFromHb((java.util.Map) intListMap8, (java.util.Map) strMap16, intListMap17, true, stormTopology19);
+        org.junit.Assert.assertNotNull(strMap3);
+        org.junit.Assert.assertNotNull(strMap7);
+        org.junit.Assert.assertNotNull(strMapList11);
+        org.junit.Assert.assertNotNull(executorSummaryArray12);
+        org.junit.Assert.assertArrayEquals(executorSummaryArray12, new org.apache.storm.generated.ExecutorSummary[] {});
+        org.junit.Assert.assertTrue("'" + boolean14 + "' != '" + false + "'", boolean14 == false);
+        org.junit.Assert.assertNotNull(strMap16);
+        org.junit.Assert.assertNotNull(strMapList20);
+    }
+
+    @Test
+    public void test016() throws Throwable {
+        if (debug)
+            System.out.format("%n%s%n", "StatsUtilRandoop0.test016");
+        org.apache.storm.generated.ExecutorSummary[] executorSummaryArray0 = new org.apache.storm.generated.ExecutorSummary[] {};
+        java.util.ArrayList<org.apache.storm.generated.ExecutorSummary> executorSummaryList1 = new java.util.ArrayList<org.apache.storm.generated.ExecutorSummary>();
+        boolean boolean2 = java.util.Collections.addAll((java.util.Collection<org.apache.storm.generated.ExecutorSummary>) executorSummaryList1, executorSummaryArray0);
+        java.util.Map<java.lang.String, java.util.Map> strMap4 = org.apache.storm.stats.StatsUtil.spoutStreamsStats((java.util.List<org.apache.storm.generated.ExecutorSummary>) executorSummaryList1, false);
+        java.util.Map<java.lang.String, java.util.Map> strMap5 = org.apache.storm.stats.StatsUtil.aggregateSpoutStreams(strMap4);
+        java.lang.Class<?> wildcardClass6 = strMap4.getClass();
+        org.junit.Assert.assertNotNull(executorSummaryArray0);
+        org.junit.Assert.assertArrayEquals(executorSummaryArray0, new org.apache.storm.generated.ExecutorSummary[] {});
+        org.junit.Assert.assertTrue("'" + boolean2 + "' != '" + false + "'", boolean2 == false);
+        org.junit.Assert.assertNotNull(strMap4);
+        org.junit.Assert.assertNotNull(strMap5);
+        org.junit.Assert.assertNotNull(wildcardClass6);
+    }
+
+    @Test
+    public void test041() throws Throwable {
+        if (debug)
+            System.out.format("%n%s%n", "StatsUtilRandoop0.test041");
+        java.util.Map<java.lang.Integer, java.lang.String> intMap2 = null;
+        java.util.Map<java.util.List<java.lang.Integer>, java.util.Map<java.lang.String, java.lang.Object>> intListMap3 = null;
+        java.util.Map<java.util.List<java.lang.Long>, java.util.List<java.lang.Object>> longListMap4 = null;
+        java.util.Map<java.lang.String, java.lang.String> strMap5 = null;
+        java.util.Map<org.apache.storm.scheduler.WorkerSlot, org.apache.storm.generated.WorkerResources> workerSlotMap6 = null;
+        java.util.List<org.apache.storm.generated.WorkerSummary> workerSummaryList11 = org.apache.storm.stats.StatsUtil.aggWorkerStats("600", "", intMap2, intListMap3, longListMap4, strMap5, workerSlotMap6, true, false, "600", "600");
+        java.lang.Class<?> wildcardClass12 = workerSummaryList11.getClass();
+        org.junit.Assert.assertNotNull(workerSummaryList11);
+        org.junit.Assert.assertNotNull(wildcardClass12);
+    }
+
+    @Test
+    public void test045() throws Throwable {
+        if (debug)
+            System.out.format("%n%s%n", "StatsUtilRandoop0.test045");
+        org.apache.storm.generated.ExecutorSummary[] executorSummaryArray0 = new org.apache.storm.generated.ExecutorSummary[] {};
+        java.util.ArrayList<org.apache.storm.generated.ExecutorSummary> executorSummaryList1 = new java.util.ArrayList<org.apache.storm.generated.ExecutorSummary>();
+        boolean boolean2 = java.util.Collections.addAll((java.util.Collection<org.apache.storm.generated.ExecutorSummary>) executorSummaryList1, executorSummaryArray0);
+        java.util.Map<java.lang.String, java.util.Map> strMap4 = org.apache.storm.stats.StatsUtil.aggregateSpoutStats((java.util.List<org.apache.storm.generated.ExecutorSummary>) executorSummaryList1, false);
+        java.util.Map<java.lang.String, java.util.Map> strMap5 = org.apache.storm.stats.StatsUtil.aggregateSpoutStreams(strMap4);
+        org.junit.Assert.assertNotNull(executorSummaryArray0);
+        org.junit.Assert.assertArrayEquals(executorSummaryArray0, new org.apache.storm.generated.ExecutorSummary[] {});
+        org.junit.Assert.assertTrue("'" + boolean2 + "' != '" + false + "'", boolean2 == false);
+        org.junit.Assert.assertNotNull(strMap4);
+        org.junit.Assert.assertNotNull(strMap5);
+    }
+    @Test
+    public void test048() throws Throwable {
+        if (debug)
+            System.out.format("%n%s%n", "StatsUtilRandoop0.test048");
+        java.util.Map<java.lang.String, java.lang.Object> strMap3 = null;
+        java.util.Map<java.lang.String, java.lang.Object> strMap4 = null;
+        java.util.Map<java.lang.String, java.lang.Object> strMap5 = org.apache.storm.stats.StatsUtil.mergeAggCompStatsTopoPageBolt(strMap3, strMap4);
+        org.apache.storm.generated.ExecutorSummary[] executorSummaryArray6 = new org.apache.storm.generated.ExecutorSummary[] {};
+        java.util.ArrayList<org.apache.storm.generated.ExecutorSummary> executorSummaryList7 = new java.util.ArrayList<org.apache.storm.generated.ExecutorSummary>();
+        boolean boolean8 = java.util.Collections.addAll((java.util.Collection<org.apache.storm.generated.ExecutorSummary>) executorSummaryList7, executorSummaryArray6);
+        java.util.Map<java.lang.String, java.util.Map> strMap10 = org.apache.storm.stats.StatsUtil.aggregateSpoutStats((java.util.List<org.apache.storm.generated.ExecutorSummary>) executorSummaryList7, false);
+        java.util.Map<java.util.List<java.lang.String>, java.lang.Double> strListMap11 = null;
+        java.util.Map<java.util.List<java.lang.String>, java.lang.Double> strListMap12 = null;
+        java.util.Map<java.util.List<java.lang.String>, java.lang.Long> strListMap13 = null;
+        java.util.Map<java.lang.String, java.lang.Number> strMap14 = org.apache.storm.stats.StatsUtil.aggBoltLatAndCount(strListMap11, strListMap12, strListMap13);
+        java.util.Map<java.util.List<java.lang.String>, java.lang.Double> strListMap15 = null;
+        java.util.Map<java.util.List<java.lang.String>, java.lang.Double> strListMap16 = null;
+        java.util.Map<java.util.List<java.lang.String>, java.lang.Long> strListMap17 = null;
+        java.util.Map<java.lang.String, java.lang.Number> strMap18 = org.apache.storm.stats.StatsUtil.aggBoltLatAndCount(strListMap15, strListMap16, strListMap17);
+        java.util.Map<java.util.List<java.lang.Integer>, java.util.Map<java.lang.String, java.lang.Object>> intListMap19 = null;
+        org.apache.storm.generated.StormTopology stormTopology21 = null;
+        java.util.List<java.util.Map<java.lang.String, java.lang.Object>> strMapList22 = org.apache.storm.stats.StatsUtil.extractDataFromHb((java.util.Map) strListMap12, (java.util.Map) strMap18, intListMap19, false, stormTopology21);
+        java.util.Map<java.util.List<java.lang.Integer>, java.util.Map<java.lang.String, java.lang.Object>> intListMap23 = null;
+        org.apache.storm.generated.StormTopology stormTopology25 = null;
+        java.util.List<java.util.Map<java.lang.String, java.lang.Object>> strMapList26 = org.apache.storm.stats.StatsUtil.extractDataFromHb((java.util.Map) strMap10, (java.util.Map) strListMap12, intListMap23, false, stormTopology25);
+        java.util.Map<java.util.List<java.lang.Integer>, java.util.Map<java.lang.String, java.lang.Object>> intListMap27 = null;
+        org.apache.storm.generated.StormTopology stormTopology29 = null;
+        java.util.List<java.util.Map<java.lang.String, java.lang.Object>> strMapList30 = org.apache.storm.stats.StatsUtil.extractDataFromHb((java.util.Map) strMap4, (java.util.Map) strMap10, intListMap27, false, stormTopology29);
+        java.util.Map<java.lang.String, java.lang.Object> strMap31 = null;
+        java.util.Map<java.lang.String, java.lang.Object> strMap32 = null;
+        java.util.Map<java.lang.String, java.lang.Object> strMap33 = org.apache.storm.stats.StatsUtil.mergeAggCompStatsTopoPageBolt(strMap31, strMap32);
+        java.util.Map<java.lang.String, java.lang.Object> strMap34 = null;
+        java.util.Map<java.lang.String, java.lang.Object> strMap35 = null;
+        java.util.Map<java.lang.String, java.lang.Object> strMap36 = org.apache.storm.stats.StatsUtil.mergeAggCompStatsTopoPageBolt(strMap34, strMap35);
+        java.util.Map<java.lang.String, java.lang.Object> strMap37 = org.apache.storm.stats.StatsUtil.mergeAggCompStatsTopoPageSpout(strMap33, strMap34);
+        java.util.Map<java.util.List<java.lang.Integer>, java.util.Map<java.lang.String, java.lang.Object>> intListMap38 = null;
+        org.apache.storm.generated.StormTopology stormTopology39 = null;
+        org.apache.storm.cluster.IStormClusterState iStormClusterState42 = null;
+        org.apache.storm.generated.TopologyPageInfo topologyPageInfo43 = org.apache.storm.stats.StatsUtil.aggTopoExecsStats("type", (java.util.Map) strMap4, (java.util.Map) strMap33, intListMap38, stormTopology39, "type", false, iStormClusterState42);
+        java.util.Map<java.lang.String, java.lang.Object> strMap44 = null;
+        java.util.Map<java.lang.String, java.lang.Object> strMap45 = null;
+        java.util.Map<java.lang.String, java.lang.Object> strMap46 = org.apache.storm.stats.StatsUtil.mergeAggCompStatsTopoPageBolt(strMap44, strMap45);
+        java.util.Map<java.lang.String, java.lang.Object> strMap47 = null;
+        java.util.Map<java.lang.String, java.lang.Object> strMap48 = null;
+        java.util.Map<java.lang.String, java.lang.Object> strMap49 = org.apache.storm.stats.StatsUtil.mergeAggCompStatsTopoPageBolt(strMap47, strMap48);
+        java.util.Map<java.lang.String, java.lang.Object> strMap50 = org.apache.storm.stats.StatsUtil.mergeAggCompStatsTopoPageSpout(strMap46, strMap47);
+        java.util.Map<java.lang.String, java.lang.Object> strMap51 = null;
+        java.util.Map<java.lang.String, java.lang.Object> strMap52 = null;
+        java.util.Map<java.lang.String, java.lang.Object> strMap53 = org.apache.storm.stats.StatsUtil.mergeAggCompStatsTopoPageBolt(strMap51, strMap52);
+        java.util.Map<java.lang.String, java.lang.Object> strMap54 = null;
+        java.util.Map<java.lang.String, java.lang.Object> strMap55 = null;
+        java.util.Map<java.lang.String, java.lang.Object> strMap56 = org.apache.storm.stats.StatsUtil.mergeAggCompStatsTopoPageBolt(strMap54, strMap55);
+        java.util.Map<java.lang.String, java.lang.Object> strMap57 = org.apache.storm.stats.StatsUtil.mergeAggCompStatsTopoPageSpout(strMap53, strMap54);
+        java.util.Map<java.lang.String, java.lang.Object> strMap58 = org.apache.storm.stats.StatsUtil.mergeAggCompStatsTopoPageBolt(strMap46, strMap57);
+        // The following exception was thrown during execution in test generation
+        try {
+            java.util.Map<java.lang.String, java.lang.Object> strMap60 = org.apache.storm.stats.StatsUtil.aggCompExecStats("type", false, strMap4, strMap57, "type");
+            org.junit.Assert.fail("Expected exception of type java.lang.NullPointerException; message: Cannot invoke \"java.util.Map.keySet()\" because the return value of \"org.apache.storm.stats.ClientStatsUtil.getMapByKey(java.util.Map, String)\" is null");
+        } catch (java.lang.NullPointerException e) {
+            // Expected exception.
+        }
+        org.junit.Assert.assertNotNull(strMap5);
+        org.junit.Assert.assertNotNull(executorSummaryArray6);
+        org.junit.Assert.assertArrayEquals(executorSummaryArray6, new org.apache.storm.generated.ExecutorSummary[] {});
+        org.junit.Assert.assertTrue("'" + boolean8 + "' != '" + false + "'", boolean8 == false);
+        org.junit.Assert.assertNotNull(strMap10);
+        org.junit.Assert.assertNotNull(strMap14);
+        org.junit.Assert.assertNotNull(strMap18);
+        org.junit.Assert.assertNotNull(strMapList22);
+        org.junit.Assert.assertNotNull(strMapList26);
+        org.junit.Assert.assertNotNull(strMapList30);
+        org.junit.Assert.assertNotNull(strMap33);
+        org.junit.Assert.assertNotNull(strMap36);
+        org.junit.Assert.assertNotNull(strMap37);
+        org.junit.Assert.assertNotNull(topologyPageInfo43);
+        org.junit.Assert.assertNotNull(strMap46);
+        org.junit.Assert.assertNotNull(strMap49);
+        org.junit.Assert.assertNotNull(strMap50);
+        org.junit.Assert.assertNotNull(strMap53);
+        org.junit.Assert.assertNotNull(strMap56);
+        org.junit.Assert.assertNotNull(strMap57);
+        org.junit.Assert.assertNotNull(strMap58);
+    }
+
+    @Test
+    public void test057() throws Throwable {
+        if (debug)
+            System.out.format("%n%s%n", "StatsUtilRandoop0.test057");
+        org.apache.storm.generated.ExecutorSummary[] executorSummaryArray0 = new org.apache.storm.generated.ExecutorSummary[] {};
+        java.util.ArrayList<org.apache.storm.generated.ExecutorSummary> executorSummaryList1 = new java.util.ArrayList<org.apache.storm.generated.ExecutorSummary>();
+        boolean boolean2 = java.util.Collections.addAll((java.util.Collection<org.apache.storm.generated.ExecutorSummary>) executorSummaryList1, executorSummaryArray0);
+        java.util.Map<java.lang.String, java.util.Map> strMap4 = org.apache.storm.stats.StatsUtil.spoutStreamsStats((java.util.List<org.apache.storm.generated.ExecutorSummary>) executorSummaryList1, false);
+        java.util.Map<java.lang.String, java.util.Map<java.lang.String, java.util.Map<java.lang.Class<?>, java.lang.Long>>> strMap5 = org.apache.storm.stats.StatsUtil.aggregateCommonStats((java.util.List<org.apache.storm.generated.ExecutorSummary>) executorSummaryList1);
+        java.util.Map<java.lang.String, java.util.Map> strMap7 = org.apache.storm.stats.StatsUtil.spoutStreamsStats((java.util.List<org.apache.storm.generated.ExecutorSummary>) executorSummaryList1, true);
+        org.junit.Assert.assertNotNull(executorSummaryArray0);
+        org.junit.Assert.assertArrayEquals(executorSummaryArray0, new org.apache.storm.generated.ExecutorSummary[] {});
+        org.junit.Assert.assertTrue("'" + boolean2 + "' != '" + false + "'", boolean2 == false);
+        org.junit.Assert.assertNotNull(strMap4);
+        org.junit.Assert.assertNotNull(strMap5);
+        org.junit.Assert.assertNotNull(strMap7);
+    }
+
+    @Test
+    public void test064() throws Throwable {
+        if (debug)
+            System.out.format("%n%s%n", "StatsUtilRandoop0.test064");
+        org.apache.storm.generated.ExecutorSummary[] executorSummaryArray0 = new org.apache.storm.generated.ExecutorSummary[] {};
+        java.util.ArrayList<org.apache.storm.generated.ExecutorSummary> executorSummaryList1 = new java.util.ArrayList<org.apache.storm.generated.ExecutorSummary>();
+        boolean boolean2 = java.util.Collections.addAll((java.util.Collection<org.apache.storm.generated.ExecutorSummary>) executorSummaryList1, executorSummaryArray0);
+        java.util.Map<java.lang.String, java.util.Map> strMap4 = org.apache.storm.stats.StatsUtil.spoutStreamsStats((java.util.List<org.apache.storm.generated.ExecutorSummary>) executorSummaryList1, false);
+        java.util.Map<java.lang.String, java.util.Map> strMap5 = org.apache.storm.stats.StatsUtil.aggregateSpoutStreams(strMap4);
+        org.apache.storm.generated.ExecutorSummary[] executorSummaryArray6 = new org.apache.storm.generated.ExecutorSummary[] {};
+        java.util.ArrayList<org.apache.storm.generated.ExecutorSummary> executorSummaryList7 = new java.util.ArrayList<org.apache.storm.generated.ExecutorSummary>();
+        boolean boolean8 = java.util.Collections.addAll((java.util.Collection<org.apache.storm.generated.ExecutorSummary>) executorSummaryList7, executorSummaryArray6);
+        java.util.Map<java.lang.String, java.util.Map> strMap10 = org.apache.storm.stats.StatsUtil.spoutStreamsStats((java.util.List<org.apache.storm.generated.ExecutorSummary>) executorSummaryList7, false);
+        java.lang.Long[] longArray16 = new java.lang.Long[] { 1L, 10L, 1L };
+        java.util.ArrayList<java.lang.Long> longList17 = new java.util.ArrayList<java.lang.Long>();
+        boolean boolean18 = java.util.Collections.addAll((java.util.Collection<java.lang.Long>) longList17, longArray16);
+        org.apache.storm.generated.SupervisorWorkerHeartbeat supervisorWorkerHeartbeat19 = org.apache.storm.stats.StatsUtil.thriftifyRpcWorkerHb("", (java.util.List<java.lang.Long>) longList17);
+        org.apache.storm.generated.SupervisorWorkerHeartbeat supervisorWorkerHeartbeat20 = org.apache.storm.stats.StatsUtil.thriftifyRpcWorkerHb("", (java.util.List<java.lang.Long>) longList17);
+        java.util.Map<java.util.List<java.lang.Integer>, java.util.Map<java.lang.String, java.lang.Object>> intListMap21 = org.apache.storm.stats.StatsUtil.convertWorkerBeats(supervisorWorkerHeartbeat20);
+        org.apache.storm.generated.StormTopology stormTopology25 = null;
+        // The following exception was thrown during execution in test generation
+        try {
+            org.apache.storm.generated.ComponentPageInfo componentPageInfo27 = org.apache.storm.stats.StatsUtil.aggCompExecsStats((java.util.Map) strMap4, (java.util.Map) strMap10, intListMap21, "600", true, "1,000", stormTopology25, "type");
+            org.junit.Assert.fail("Expected exception of type java.lang.ClassCastException; message: class java.lang.String cannot be cast to class java.util.List (java.lang.String and java.util.List are in module java.base of loader 'bootstrap')");
+        } catch (java.lang.ClassCastException e) {
+            // Expected exception.
+        }
+        org.junit.Assert.assertNotNull(executorSummaryArray0);
+        org.junit.Assert.assertArrayEquals(executorSummaryArray0, new org.apache.storm.generated.ExecutorSummary[] {});
+        org.junit.Assert.assertTrue("'" + boolean2 + "' != '" + false + "'", boolean2 == false);
+        org.junit.Assert.assertNotNull(strMap4);
+        org.junit.Assert.assertNotNull(strMap5);
+        org.junit.Assert.assertNotNull(executorSummaryArray6);
+        org.junit.Assert.assertArrayEquals(executorSummaryArray6, new org.apache.storm.generated.ExecutorSummary[] {});
+        org.junit.Assert.assertTrue("'" + boolean8 + "' != '" + false + "'", boolean8 == false);
+        org.junit.Assert.assertNotNull(strMap10);
+        org.junit.Assert.assertNotNull(longArray16);
+        org.junit.Assert.assertArrayEquals(longArray16, new java.lang.Long[] { 1L, 10L, 1L });
+        org.junit.Assert.assertTrue("'" + boolean18 + "' != '" + true + "'", boolean18 == true);
+        org.junit.Assert.assertNotNull(supervisorWorkerHeartbeat19);
+        org.junit.Assert.assertNotNull(supervisorWorkerHeartbeat20);
+        org.junit.Assert.assertNotNull(intListMap21);
+    }
+
+
+    @Test
+    public void test066() throws Throwable {
+        if (debug)
+            System.out.format("%n%s%n", "StatsUtilRandoop0.test066");
+        org.apache.storm.generated.ExecutorSummary[] executorSummaryArray0 = new org.apache.storm.generated.ExecutorSummary[] {};
+        java.util.ArrayList<org.apache.storm.generated.ExecutorSummary> executorSummaryList1 = new java.util.ArrayList<org.apache.storm.generated.ExecutorSummary>();
+        boolean boolean2 = java.util.Collections.addAll((java.util.Collection<org.apache.storm.generated.ExecutorSummary>) executorSummaryList1, executorSummaryArray0);
+        java.util.Map<java.lang.String, java.util.Map> strMap4 = org.apache.storm.stats.StatsUtil.aggregateSpoutStats((java.util.List<org.apache.storm.generated.ExecutorSummary>) executorSummaryList1, false);
+        java.util.Map<java.lang.String, java.util.Map> strMap6 = org.apache.storm.stats.StatsUtil.aggregateSpoutStats((java.util.List<org.apache.storm.generated.ExecutorSummary>) executorSummaryList1, true);
+        java.lang.Class<?> wildcardClass7 = executorSummaryList1.getClass();
+        org.junit.Assert.assertNotNull(executorSummaryArray0);
+        org.junit.Assert.assertArrayEquals(executorSummaryArray0, new org.apache.storm.generated.ExecutorSummary[] {});
+        org.junit.Assert.assertTrue("'" + boolean2 + "' != '" + false + "'", boolean2 == false);
+        org.junit.Assert.assertNotNull(strMap4);
+        org.junit.Assert.assertNotNull(strMap6);
+        org.junit.Assert.assertNotNull(wildcardClass7);
+    }
+
+    @Test
+    public void test069() throws Throwable {
+        if (debug)
+            System.out.format("%n%s%n", "StatsUtilRandoop0.test069");
+        java.lang.Long[] longArray6 = new java.lang.Long[] { 1L, 10L, 1L };
+        java.util.ArrayList<java.lang.Long> longList7 = new java.util.ArrayList<java.lang.Long>();
+        boolean boolean8 = java.util.Collections.addAll((java.util.Collection<java.lang.Long>) longList7, longArray6);
+        org.apache.storm.generated.SupervisorWorkerHeartbeat supervisorWorkerHeartbeat9 = org.apache.storm.stats.StatsUtil.thriftifyRpcWorkerHb("", (java.util.List<java.lang.Long>) longList7);
+        org.apache.storm.generated.SupervisorWorkerHeartbeat supervisorWorkerHeartbeat10 = org.apache.storm.stats.StatsUtil.thriftifyRpcWorkerHb("", (java.util.List<java.lang.Long>) longList7);
+        org.apache.storm.generated.SupervisorWorkerHeartbeat supervisorWorkerHeartbeat11 = org.apache.storm.stats.StatsUtil.thriftifyRpcWorkerHb("1,000", (java.util.List<java.lang.Long>) longList7);
+        org.junit.Assert.assertNotNull(longArray6);
+        org.junit.Assert.assertArrayEquals(longArray6, new java.lang.Long[] { 1L, 10L, 1L });
+        org.junit.Assert.assertTrue("'" + boolean8 + "' != '" + true + "'", boolean8 == true);
+        org.junit.Assert.assertNotNull(supervisorWorkerHeartbeat9);
+        org.junit.Assert.assertNotNull(supervisorWorkerHeartbeat10);
+        org.junit.Assert.assertNotNull(supervisorWorkerHeartbeat11);
+    }
+    @Test
+    public void test070() throws Throwable {
+        if (debug)
+            System.out.format("%n%s%n", "StatsUtilRandoop0.test070");
+        org.apache.storm.generated.ExecutorSummary[] executorSummaryArray4 = new org.apache.storm.generated.ExecutorSummary[] {};
+        java.util.ArrayList<org.apache.storm.generated.ExecutorSummary> executorSummaryList5 = new java.util.ArrayList<org.apache.storm.generated.ExecutorSummary>();
+        boolean boolean6 = java.util.Collections.addAll((java.util.Collection<org.apache.storm.generated.ExecutorSummary>) executorSummaryList5, executorSummaryArray4);
+        java.util.Map<java.lang.String, java.util.Map<java.lang.String, java.util.Map<java.util.Map<java.lang.String, java.lang.Number>, java.lang.Long>>> strMap7 = org.apache.storm.stats.StatsUtil.aggregateCommonStats((java.util.List<org.apache.storm.generated.ExecutorSummary>) executorSummaryList5);
+        java.util.Map map8 = null;
+        java.util.Map<java.util.List<java.lang.Integer>, java.util.Map<java.lang.String, java.lang.Object>> intListMap9 = null;
+        org.apache.storm.generated.StormTopology stormTopology11 = null;
+        java.util.List<java.util.Map<java.lang.String, java.lang.Object>> strMapList13 = org.apache.storm.stats.StatsUtil.extractDataFromHb((java.util.Map) strMap7, map8, intListMap9, true, stormTopology11, "hi!");
+        java.util.Map<java.lang.String, java.lang.Object> strMap15 = org.apache.storm.stats.StatsUtil.aggregateCompStats("hi!", false, strMapList13, "600");
+        java.util.Map<java.lang.String, java.lang.Object> strMap17 = org.apache.storm.stats.StatsUtil.aggregateCompStats("1,000", true, strMapList13, "hi!");
+        org.apache.storm.generated.ExecutorSummary[] executorSummaryArray18 = new org.apache.storm.generated.ExecutorSummary[] {};
+        java.util.ArrayList<org.apache.storm.generated.ExecutorSummary> executorSummaryList19 = new java.util.ArrayList<org.apache.storm.generated.ExecutorSummary>();
+        boolean boolean20 = java.util.Collections.addAll((java.util.Collection<org.apache.storm.generated.ExecutorSummary>) executorSummaryList19, executorSummaryArray18);
+        java.util.Map<java.lang.String, java.util.Map> strMap22 = org.apache.storm.stats.StatsUtil.spoutStreamsStats((java.util.List<org.apache.storm.generated.ExecutorSummary>) executorSummaryList19, false);
+        java.util.Map<java.lang.String, java.util.Map> strMap23 = org.apache.storm.stats.StatsUtil.aggregateSpoutStreams(strMap22);
+        java.lang.Long[] longArray29 = new java.lang.Long[] { 1L, 10L, 1L };
+        java.util.ArrayList<java.lang.Long> longList30 = new java.util.ArrayList<java.lang.Long>();
+        boolean boolean31 = java.util.Collections.addAll((java.util.Collection<java.lang.Long>) longList30, longArray29);
+        org.apache.storm.generated.SupervisorWorkerHeartbeat supervisorWorkerHeartbeat32 = org.apache.storm.stats.StatsUtil.thriftifyRpcWorkerHb("", (java.util.List<java.lang.Long>) longList30);
+        org.apache.storm.generated.SupervisorWorkerHeartbeat supervisorWorkerHeartbeat33 = org.apache.storm.stats.StatsUtil.thriftifyRpcWorkerHb("", (java.util.List<java.lang.Long>) longList30);
+        java.util.Map<java.util.List<java.lang.Integer>, java.util.Map<java.lang.String, java.lang.Object>> intListMap34 = org.apache.storm.stats.StatsUtil.convertWorkerBeats(supervisorWorkerHeartbeat33);
+        org.apache.storm.generated.StormTopology stormTopology38 = null;
+        // The following exception was thrown during execution in test generation
+        try {
+            org.apache.storm.generated.ComponentPageInfo componentPageInfo40 = org.apache.storm.stats.StatsUtil.aggCompExecsStats((java.util.Map) strMap17, (java.util.Map) strMap22, intListMap34, "10,000", false, "1,000", stormTopology38, "type");
+            org.junit.Assert.fail("Expected exception of type java.lang.ClassCastException; message: class java.lang.String cannot be cast to class java.util.List (java.lang.String and java.util.List are in module java.base of loader 'bootstrap')");
+        } catch (java.lang.ClassCastException e) {
+            // Expected exception.
+        }
+        org.junit.Assert.assertNotNull(executorSummaryArray4);
+        org.junit.Assert.assertArrayEquals(executorSummaryArray4, new org.apache.storm.generated.ExecutorSummary[] {});
+        org.junit.Assert.assertTrue("'" + boolean6 + "' != '" + false + "'", boolean6 == false);
+        org.junit.Assert.assertNotNull(strMap7);
+        org.junit.Assert.assertNotNull(strMapList13);
+        org.junit.Assert.assertNotNull(strMap15);
+        org.junit.Assert.assertNotNull(strMap17);
+        org.junit.Assert.assertNotNull(executorSummaryArray18);
+        org.junit.Assert.assertArrayEquals(executorSummaryArray18, new org.apache.storm.generated.ExecutorSummary[] {});
+        org.junit.Assert.assertTrue("'" + boolean20 + "' != '" + false + "'", boolean20 == false);
+        org.junit.Assert.assertNotNull(strMap22);
+        org.junit.Assert.assertNotNull(strMap23);
+        org.junit.Assert.assertNotNull(longArray29);
+        org.junit.Assert.assertArrayEquals(longArray29, new java.lang.Long[] { 1L, 10L, 1L });
+        org.junit.Assert.assertTrue("'" + boolean31 + "' != '" + true + "'", boolean31 == true);
+        org.junit.Assert.assertNotNull(supervisorWorkerHeartbeat32);
+        org.junit.Assert.assertNotNull(supervisorWorkerHeartbeat33);
+        org.junit.Assert.assertNotNull(intListMap34);
+    }
+
+    @Test
+    public void test084() throws Throwable {
+        if (debug)
+            System.out.format("%n%s%n", "StatsUtilRandoop0.test084");
+        org.apache.storm.generated.ExecutorSummary[] executorSummaryArray0 = new org.apache.storm.generated.ExecutorSummary[] {};
+        java.util.ArrayList<org.apache.storm.generated.ExecutorSummary> executorSummaryList1 = new java.util.ArrayList<org.apache.storm.generated.ExecutorSummary>();
+        boolean boolean2 = java.util.Collections.addAll((java.util.Collection<org.apache.storm.generated.ExecutorSummary>) executorSummaryList1, executorSummaryArray0);
+        java.util.Map<java.lang.String, java.util.Map> strMap4 = org.apache.storm.stats.StatsUtil.aggregateSpoutStats((java.util.List<org.apache.storm.generated.ExecutorSummary>) executorSummaryList1, false);
+        double double5 = org.apache.storm.stats.StatsUtil.computeBoltCapacity((java.util.List<org.apache.storm.generated.ExecutorSummary>) executorSummaryList1);
+        double double6 = org.apache.storm.stats.StatsUtil.computeBoltCapacity((java.util.List<org.apache.storm.generated.ExecutorSummary>) executorSummaryList1);
+        org.junit.Assert.assertNotNull(executorSummaryArray0);
+        org.junit.Assert.assertArrayEquals(executorSummaryArray0, new org.apache.storm.generated.ExecutorSummary[] {});
+        org.junit.Assert.assertTrue("'" + boolean2 + "' != '" + false + "'", boolean2 == false);
+        org.junit.Assert.assertNotNull(strMap4);
+        org.junit.Assert.assertTrue("'" + double5 + "' != '" + 0.0d + "'", double5 == 0.0d);
+        org.junit.Assert.assertTrue("'" + double6 + "' != '" + 0.0d + "'", double6 == 0.0d);
+    }
+}

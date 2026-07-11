@@ -32,10 +32,14 @@
 
     <artifactId>storm-server</artifactId>
 
-    <properties>
-        <jacocoArgLine></jacocoArgLine>
-        <storm-server.test.introspection.argLine>--add-opens java.base/java.lang=ALL-UNNAMED</storm-server.test.introspection.argLine>
-    </properties>
+    
+<properties>
+<jacocoArgLine></jacocoArgLine>
+    <storm-server.test.introspection.argLine>
+        --add-opens java.base/java.lang=ALL-UNNAMED
+    </storm-server.test.introspection.argLine>
+</properties>
+
 
     <dependencies>
         <dependency>
@@ -228,34 +232,72 @@
         </testResources>
 
         <plugins>
-            <plugin>
-  <groupId>org.apache.maven.plugins</groupId>
-  <artifactId>maven-surefire-plugin</artifactId>
-  <version>3.5.2</version>
-  <configuration>
-    <argLine>${argLine}</argLine>
-  </configuration>
+           
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-surefire-plugin</artifactId>
+
+    <configuration>
+
+        <redirectTestOutputToFile>true</redirectTestOutputToFile>
+
+        <excludedGroups>
+            IntegrationTest | PerformanceTest
+        </excludedGroups>
+
+        <argLine>
+            @{jacocoArgLine} -Xmx3g
+        </argLine>
+
+        <trimStackTrace>false</trimStackTrace>
+
+        <forkCount>1.0C</forkCount>
+
+        <reuseForks>false</reuseForks>
+
+        <systemPropertyVariables>
+            <storm.home>
+                ${project.build.directory}/testhome
+            </storm.home>
+        </systemPropertyVariables>
+
+    </configuration>
 </plugin>
 <plugin>
-  <groupId>org.jacoco</groupId>
-  <artifactId>jacoco-maven-plugin</artifactId>
-  <version>0.8.11</version>
-  <executions>
-    <execution>
-      <goals>
-        <goal>prepare-agent</goal>
-      </goals>
-    </execution>
-    <execution>
-      <id>report</id>
-      <phase>test</phase>
-      <goals>
-        <goal>report</goal>
-      </goals>
-    </execution>
-  </executions>
-</plugin>
+    <groupId>org.jacoco</groupId>
+    <artifactId>jacoco-maven-plugin</artifactId>
+    <version>0.8.12</version>
 
+    <executions>
+
+        <execution>
+            <id>prepare-agent</id>
+
+            <goals>
+                <goal>prepare-agent</goal>
+            </goals>
+
+            <configuration>
+                <propertyName>jacocoArgLine</propertyName>
+
+                <destFile>
+                    ${project.build.directory}/jacoco.exec
+                </destFile>
+            </configuration>
+        </execution>
+
+        <execution>
+            <id>report</id>
+
+            <phase>verify</phase>
+
+            <goals>
+                <goal>report</goal>
+            </goals>
+        </execution>
+
+    </executions>
+</plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
@@ -311,132 +353,82 @@
                 </executions>
             </plugin>
         </plugins>
-    </build>
+    
+</build>
 
-    <profiles>
-        <profile>
-            <id>milestone4-quality</id>
+<profiles>
 
-            <build>
-                <plugins>
-                <plugin>
-  <groupId>org.pitest</groupId>
-  <artifactId>pitest-maven</artifactId>
-  <version>1.25.4</version>
-  <dependencies>
-  
-    <dependency>
-      <groupId>org.pitest</groupId>
-      <artifactId>pitest-junit5-plugin</artifactId>
-      <version>1.2.3</version>
-    </dependency>
-  </dependencies>
-  <configuration>
-    <targetClasses>
-      <param>org.apache.storm.stats.StatsUtil*</param>
-    </targetClasses>
-    <targetTests>
-      <param>org.apache.storm.stats.*Test*</param>
-    </targetTests>
-    <excludedTestClasses>
-      <param>*_ESTest</param>
-      <param>*_ESTest_scaffolding</param>
-    </excludedTestClasses>
-    <threads>1</threads>
-    <timestampedReports>false</timestampedReports>
-    <outputFormats>
-      <param>HTML</param>
-      <param>XML</param>
-    </outputFormats>
-  </configuration>
-</plugin>
-                    <plugin>
-                        <groupId>org.jacoco</groupId>
-                        <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>0.8.12</version>
+    <profile>
+        <id>pit-statsutil</id>
 
-                        <executions>
-                            <execution>
-                                <id>prepare-agent</id>
-                                <goals>
-                                    <goal>prepare-agent</goal>
-                                </goals>
-                                <configuration>
-                                    <propertyName>jacocoArgLine</propertyName>
-                                    <destFile>${project.build.directory}/jacoco.exec</destFile>
-                                </configuration>
-                            </execution>
-
-                            <execution>
-                                <id>report</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>report</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-       
-<profile>
-    <id>pit-statsutil</id>
-
-    <properties>
-        <jacocoArgLine></jacocoArgLine>
-        <argLine></argLine>
-    </properties>
 
     <build>
         <plugins>
+
             <plugin>
+
                 <groupId>org.pitest</groupId>
                 <artifactId>pitest-maven</artifactId>
                 <version>1.25.7</version>
 
                 <dependencies>
+
                     <dependency>
                         <groupId>org.pitest</groupId>
                         <artifactId>pitest-junit5-plugin</artifactId>
                         <version>1.2.3</version>
                     </dependency>
+
                 </dependencies>
 
                 <configuration>
+
                     <targetClasses>
-                        <param>org.apache.storm.stats.StatsUtil</param>
+                        <param>
+                            org.apache.storm.stats.StatsUtil
+                        </param>
                     </targetClasses>
 
-                    <targetTests>
-                        <param>org.apache.storm.stats.StatsUtilCategoryPartitionTest</param>
-                    </targetTests>
+                    <excludedGroups>
 
-                    <excludedGroups combine.self="override">
                         <param>IntegrationTest</param>
+
                         <param>PerformanceTest</param>
+
                     </excludedGroups>
 
                     <excludedTestClasses>
-                        <param>org.apache.storm.stats.StatsUtil_ESTest</param>
-                        <param>org.apache.storm.stats.StatsUtil_ESTest_scaffolding</param>
+
+                        <param>
+                            org.apache.storm.stats.StatsUtil_ESTest
+                        </param>
+
+                        <param>
+                            org.apache.storm.stats.StatsUtil_ESTest_scaffolding
+                        </param>
+
                     </excludedTestClasses>
+
+                    <threads>1</threads>
+
+                    <timeoutConstant>15000</timeoutConstant>
+
+                    <timestampedReports>false</timestampedReports>
+
+                    <failWhenNoMutations>false</failWhenNoMutations>
 
                     <outputFormats>
                         <param>HTML</param>
                         <param>XML</param>
                     </outputFormats>
 
-                    <timestampedReports>false</timestampedReports>
-                    <threads>1</threads>
-                    <timeoutConstant>15000</timeoutConstant>
-                    <failWhenNoMutations>false</failWhenNoMutations>
-                    <verbose>true</verbose>
                 </configuration>
+
             </plugin>
+
         </plugins>
     </build>
+
 </profile>
 
     </profiles>

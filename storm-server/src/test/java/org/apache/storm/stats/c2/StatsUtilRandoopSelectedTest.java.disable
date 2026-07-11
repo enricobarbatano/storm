@@ -1,0 +1,155 @@
+package org.apache.storm.stats.c2;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.storm.generated.ExecutorSummary;
+import org.apache.storm.stats.StatsUtil;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
+import org.junit.Test;
+
+public class StatsUtilRandoopSelectedTest {
+
+    @Test
+    public void testTypeConstant() {
+        assertEquals("type", StatsUtil.TYPE);
+    }
+
+    @Test
+    public void testTenMinStringConstant() {
+        assertEquals("600", StatsUtil.TEN_MIN_IN_SECONDS_STR);
+    }
+
+    @Test
+    public void testTenMinIntConstant() {
+        assertEquals(600, StatsUtil.TEN_MIN_IN_SECONDS);
+    }
+
+    @Test
+    public void testFloatStr() {
+        assertEquals("10,000", StatsUtil.floatStr(10.0d));
+    }
+
+    @Test
+    public void testAggregateSpoutStatsEmptyList() {
+        List<ExecutorSummary> executors = new ArrayList<>();
+        Map<String, Map> result =
+                StatsUtil.aggregateSpoutStats(executors, false);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testAggregateBoltStatsEmptyList() {
+        List<ExecutorSummary> executors = new ArrayList<>();
+        Map<String, Map> result =
+                StatsUtil.aggregateBoltStats(executors, false);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testAggregateCommonStatsEmptyList() {
+        List<ExecutorSummary> executors = new ArrayList<>();
+
+        Map<?, ?> result =
+                StatsUtil.aggregateCommonStats(executors);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testComputeBoltCapacityEmptyList() {
+        List<ExecutorSummary> executors = new ArrayList<>();
+
+        assertEquals(
+                0.0d,
+                StatsUtil.computeBoltCapacity(executors),
+                0.000001);
+    }
+
+    @Test
+    public void testGetFilledStatsEmptyList() {
+        List<ExecutorSummary> executors = new ArrayList<>();
+
+        List<ExecutorSummary> filled =
+                StatsUtil.getFilledStats(executors);
+
+        assertNotNull(filled);
+    }
+
+    @Test
+    public void testBoltStreamsStatsEmptyList() {
+        List<ExecutorSummary> executors = new ArrayList<>();
+
+        Map<String, Map> result =
+                StatsUtil.boltStreamsStats(executors, false);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testSpoutStreamsStatsEmptyList() {
+        List<ExecutorSummary> executors = new ArrayList<>();
+
+        Map<String, Map> result =
+                StatsUtil.spoutStreamsStats(executors, true);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testAggregateBoltStreams() {
+        List<ExecutorSummary> executors = new ArrayList<>();
+
+        Map<String, Map> boltStats =
+                StatsUtil.aggregateBoltStats(executors, true);
+
+        Map<String, Map> streams =
+                StatsUtil.aggregateBoltStreams(boltStats);
+
+        assertNotNull(streams);
+    }
+
+    @Test
+    public void testErrorSubsetShortStringHi() {
+        assertThrows(
+                StringIndexOutOfBoundsException.class,
+                () -> StatsUtil.errorSubset("hi!"));
+    }
+
+    @Test
+    public void testErrorSubsetShortStringType() {
+        assertThrows(
+                StringIndexOutOfBoundsException.class,
+                () -> StatsUtil.errorSubset("type"));
+    }
+
+    @Test
+    public void testErrorSubsetShortString600() {
+        assertThrows(
+                StringIndexOutOfBoundsException.class,
+                () -> StatsUtil.errorSubset("600"));
+    }
+
+    @Test
+    public void testEmptyExecutorArrayBehavior() {
+        ExecutorSummary[] array = new ExecutorSummary[] {};
+
+        List<ExecutorSummary> list = new ArrayList<>();
+        boolean added =
+                Collections.addAll(list, array);
+
+        assertFalse(added);
+
+        Map<String, Map> boltStats =
+                StatsUtil.aggregateBoltStats(list, false);
+
+        assertNotNull(boltStats);
+    }
+}

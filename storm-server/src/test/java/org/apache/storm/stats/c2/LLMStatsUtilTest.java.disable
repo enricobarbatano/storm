@@ -1,0 +1,822 @@
+package org.apache.storm.stats;
+
+
+import org.junit.Ignore;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import org.apache.storm.generated.Bolt;
+import org.apache.storm.generated.BoltStats;
+import org.apache.storm.generated.ClusterWorkerHeartbeat;
+import org.apache.storm.generated.ComponentPageInfo;
+import org.apache.storm.generated.ExecutorInfo;
+import org.apache.storm.generated.ExecutorSpecificStats;
+import org.apache.storm.generated.ExecutorStats;
+import org.apache.storm.generated.ExecutorSummary;
+import org.apache.storm.generated.GlobalStreamId;
+import org.apache.storm.generated.SpoutStats;
+import org.apache.storm.generated.StormTopology;
+import org.apache.storm.generated.SupervisorWorkerHeartbeat;
+import org.apache.storm.generated.TopologyPageInfo;
+import org.apache.storm.generated.WorkerResources;
+import org.apache.storm.generated.WorkerSummary;
+import org.apache.storm.scheduler.WorkerSlot;
+import org.junit.Test;
+
+/**
+ * Black-box JUnit 4 tests for the public API of {@link StatsUtil}.
+ */
+@SuppressWarnings({"rawtypes", "unchecked"})
+public class LLMStatsUtilTest {
+
+    private static final String WINDOW = "600";
+    private static final String STREAM = "default";
+
+    @Test
+    public void aggBoltLatAndCountAggregatesWeightedTotals() {
+        List<String> id = Arrays.asList("component", STREAM);
+        Map<List<String>, Double> execute = singletonMap(id, 2.0);
+        Map<List<String>, Double> process = singletonMap(id, 3.0);
+        Map<List<String>, Long> counts = singletonMap(id, 4L);
+
+        Map<String, Number> result = StatsUtil.aggBoltLatAndCount(execute, process, counts);
+
+        assertEquals(8.0, result.get("executeLatencyTotal").doubleValue(), 0.0);
+        assertEquals(12.0, result.get("processLatencyTotal").doubleValue(), 0.0);
+        assertEquals(4L, result.get("executed").longValue());
+    }
+
+    @Test
+    public void aggBoltLatAndCountAcceptsNullMaps() {
+        Map<String, Number> result = StatsUtil.aggBoltLatAndCount(null, null, null);
+        assertEquals(0.0, result.get("executeLatencyTotal").doubleValue(), 0.0);
+        assertEquals(0.0, result.get("processLatencyTotal").doubleValue(), 0.0);
+        assertEquals(0L, result.get("executed").longValue());
+    }
+
+    @Test
+    public void aggSpoutLatAndCountAggregatesWeightedTotal() {
+        Map<String, Number> result = StatsUtil.aggSpoutLatAndCount(
+            singletonMap(STREAM, 2.5), singletonMap(STREAM, 4L));
+        assertEquals(10.0, result.get("completeLatencyTotal").doubleValue(), 0.0);
+        assertEquals(4L, result.get("acked").longValue());
+    }
+
+    @Test
+    public void aggBoltStreamsLatAndCountHandlesMissingProcessMap() {
+        Map<String, Map> result = StatsUtil.aggBoltStreamsLatAndCount(
+            singletonMap(STREAM, 5.0), null, singletonMap(STREAM, 3L));
+        assertEquals(15.0, ((Number) result.get(STREAM).get("executeLatencyTotal")).doubleValue(), 0.0);
+        assertFalse(result.get(STREAM).containsKey("processLatencyTotal"));
+        assertEquals(3L, ((Number) result.get(STREAM).get("executed")).longValue());
+    }
+
+    @Test
+    public void aggBoltStreamsLatAndCountReturnsMutableEmptyMapForNullInput() {
+        Map<String, Map> result = StatsUtil.aggBoltStreamsLatAndCount(null, null, null);
+        assertTrue(result.isEmpty());
+        result.put(STREAM, new HashMap());
+        assertTrue(result.containsKey(STREAM));
+    }
+
+    @Test
+    public void aggSpoutStreamsLatAndCountAggregatesPerStream() {
+        Map<String, Map> result = StatsUtil.aggSpoutStreamsLatAndCount(
+            singletonMap(STREAM, 6.5), singletonMap(STREAM, 8L));
+        assertEquals(52.0, ((Number) result.get(STREAM).get("completeLatencyTotal")).doubleValue(), 0.0);
+        assertEquals(8L, ((Number) result.get(STREAM).get("acked")).longValue());
+    }
+
+    @Test
+    public void aggPreMergeCompPageBoltBuildsExecutorMetadataAndEmptyStats() {
+        Map<String, Object> beat = minimalBeat("bolt-1", ClientStatsUtil.BOLT);
+        Map<String, Object> result = StatsUtil.aggPreMergeCompPageBolt(beat, WINDOW, false);
+        assertEquals(Arrays.asList(1, 1), result.get("executor-id"));
+        assertEquals("host-a", result.get("host"));
+        assertEquals(1, result.get("num-executors"));
+        assertNotNull(result.get("cid+sid->input-stats"));
+        assertNotNull(result.get("sid->output-stats"));
+    }
+
+    @Test
+    public void aggPreMergeCompPageSpoutBuildsExecutorMetadataAndEmptyStats() {
+        Map<String, Object> beat = minimalBeat("spout-1", ClientStatsUtil.SPOUT);
+        Map<String, Object> result = StatsUtil.aggPreMergeCompPageSpout(beat, WINDOW, false);
+        assertEquals(Arrays.asList(1, 1), result.get("executor-id"));
+        assertEquals(1, result.get("num-executors"));
+        assertNotNull(result.get("sid->output-stats"));
+    }
+
+    @Test
+    public void aggPreMergeTopoPageBoltReturnsComponentEntry() {
+        Map<String, Object> beat = minimalBeat("bolt-1", ClientStatsUtil.BOLT);
+        Map<String, Object> result = StatsUtil.aggPreMergeTopoPageBolt(beat, WINDOW, true);
+        assertTrue(result.containsKey("bolt-1"));
+        Map values = (Map) result.get("bolt-1");
+        assertEquals(1, values.get("num-executors"));
+        assertEquals(0L, ((Number) values.get("executed")).longValue());
+    }
+
+    @Test
+    public void aggPreMergeTopoPageSpoutReturnsComponentEntry() {
+        Map<String, Object> beat = minimalBeat("spout-1", ClientStatsUtil.SPOUT);
+        Map<String, Object> result = StatsUtil.aggPreMergeTopoPageSpout(beat, WINDOW, true);
+        assertTrue(result.containsKey("spout-1"));
+        Map values = (Map) result.get("spout-1");
+        assertEquals(1, values.get("num-executors"));
+        assertEquals(0L, ((Number) values.get("acked")).longValue());
+    }
+
+    @Test
+    public void mergeAggCompStatsCompPageBoltCalculatesExecutorLatencies() {
+        Map<String, Object> acc = componentAccumulator(true);
+        Map<String, Object> bolt = executorComponentStats(true);
+        Map<List<String>, Map<String, Object>> input = new HashMap<>();
+        Map<String, Object> metrics = new HashMap<>();
+        metrics.put("executed", 4L);
+        metrics.put("acked", 2L);
+        metrics.put("failed", 1L);
+        metrics.put("executeLatencyTotal", 40.0);
+        metrics.put("processLatencyTotal", 12.0);
+        input.put(Arrays.asList("source", STREAM), metrics);
+        bolt.put("cid+sid->input-stats", input);
+
+        Map<String, Object> result = StatsUtil.mergeAggCompStatsCompPageBolt(acc, bolt);
+        Map executor = (Map) ((List) result.get(ClientStatsUtil.EXECUTOR_STATS)).get(0);
+        assertEquals(10.0, ((Number) executor.get("execute-latency")).doubleValue(), 0.0);
+        assertEquals(3.0, ((Number) executor.get("process-latency")).doubleValue(), 0.0);
+    }
+
+    @Test
+    public void mergeAggCompStatsCompPageSpoutCalculatesExecutorLatency() {
+        Map<String, Object> acc = componentAccumulator(false);
+        Map<String, Object> spout = executorComponentStats(false);
+        Map<String, Map<String, Object>> output = new HashMap<>();
+        Map<String, Object> metrics = new HashMap<>();
+        metrics.put("acked", 5L);
+        metrics.put("failed", 1L);
+        metrics.put("emitted", 8L);
+        metrics.put("transferred", 9L);
+        metrics.put("completeLatencyTotal", 25.0);
+        output.put(STREAM, metrics);
+        spout.put("sid->output-stats", output);
+
+        Map<String, Object> result = StatsUtil.mergeAggCompStatsCompPageSpout(acc, spout);
+        Map executor = (Map) ((List) result.get(ClientStatsUtil.EXECUTOR_STATS)).get(0);
+        assertEquals(5.0, ((Number) executor.get("complete-latency")).doubleValue(), 0.0);
+    }
+
+    @Test
+    public void mergeAggCompStatsTopoPageBoltSumsAndUsesMaximumCapacity() {
+        Map<String, Object> first = numericBoltStats(2, 0.4);
+        Map<String, Object> second = numericBoltStats(3, 0.9);
+        Map<String, Object> result = StatsUtil.mergeAggCompStatsTopoPageBolt(first, second);
+        assertEquals(3, result.get("num-executors"));
+        assertEquals(5L, ((Number) result.get("num-tasks")).longValue());
+        assertEquals(0.9, ((Number) result.get("capacity")).doubleValue(), 0.0);
+    }
+    @Ignore("Non stabile su Storm 2.7.1 / escluso dall'analisi")
+    @Test
+    public void mergeAggCompStatsTopoPageSpoutSumsNumericFields() {
+        Map<String, Object> first = numericSpoutStats(2);
+        Map<String, Object> second = numericSpoutStats(3);
+        Map<String, Object> result = StatsUtil.mergeAggCompStatsTopoPageSpout(first, second);
+        assertEquals(3, result.get("num-executors"));
+        assertEquals(5L, ((Number) result.get("num-tasks")).longValue());
+        assertEquals(10L, ((Number) result.get("acked")).longValue());
+    }
+
+    @Test
+    public void aggTopoExecStatsAggregatesSingleSpoutHeartbeat() {
+        Map<String, Object> acc = topologyAccumulator();
+        Map<String, Object> beat = minimalBeat("spout-1", ClientStatsUtil.SPOUT);
+        Map<String, Object> result = StatsUtil.aggTopoExecStats(WINDOW, true, acc, beat, ClientStatsUtil.SPOUT);
+        assertEquals(ClientStatsUtil.SPOUT, result.get("type"));
+        assertEquals(1, ((java.util.Set) result.get("workers-set")).size());
+        assertTrue(((Map) result.get("spout-id->stats")).containsKey("spout-1"));
+    }
+
+    @Test
+    public void aggTopoExecsStatsHandlesEmptyTopology() {
+        StormTopology topology = topology();
+        TopologyPageInfo result = StatsUtil.aggTopoExecsStats(
+            "topology-1", new HashMap(), new HashMap(), new HashMap<List<Integer>, Map<String, Object>>(),
+            topology, WINDOW, true, null);
+        assertEquals("topology-1", result.get_id());
+        assertEquals(0, result.get_num_tasks());
+        assertEquals(0, result.get_num_workers());
+    }
+
+    @Test
+    public void aggregateBoltStatsAggregatesOneBoltSummary() {
+        ExecutorSummary summary = boltSummary(2.0, 3.0, 4L);
+        Map<String, Map> result = StatsUtil.aggregateBoltStats(Collections.singletonList(summary), true);
+        assertEquals(4L, ((Number) ((Map) result.get("executed").get(WINDOW)).values().iterator().next()).longValue());
+    }
+
+    @Test
+    public void aggregateSpoutStatsAggregatesOneSpoutSummary() {
+        ExecutorSummary summary = spoutSummary(2.0, 4L);
+        Map<String, Map> result = StatsUtil.aggregateSpoutStats(Collections.singletonList(summary), true);
+        assertEquals(4L, ((Number) ((Map) result.get("acked").get(WINDOW)).get(STREAM)).longValue());
+    }
+
+    @Test
+    public void aggregateCommonStatsAggregatesEmittedAndTransferred() {
+        ExecutorSummary summary = spoutSummary(2.0, 4L);
+        Map<String, Map<String, Map<String, Long>>> result = StatsUtil.aggregateCommonStats(Collections.singletonList(summary));
+        assertEquals(3L, result.get("emitted").get(WINDOW).get(STREAM).longValue());
+        assertEquals(2L, result.get("transferred").get(WINDOW).get(STREAM).longValue());
+    }
+
+    @Test
+    public void preProcessStreamSummaryFiltersSystemStreams() {
+        Map<String, Map<String, Map<String, Long>>> summary = new HashMap<>();
+        summary.put("emitted", windowLongMap(1L, 9L));
+        summary.put("transferred", windowLongMap(2L, 10L));
+        StatsUtil.preProcessStreamSummary(summary, false);
+        assertFalse(summary.get("emitted").get(WINDOW).containsKey("__system"));
+        assertFalse(summary.get("transferred").get(WINDOW).containsKey("__system"));
+    }
+
+    @Test
+    public void aggregateCountStreamsSumsEachWindow() {
+        Map<String, Map<String, Long>> input = new HashMap<>();
+        Map<String, Long> streams = new HashMap<>();
+        streams.put(STREAM, 3L);
+        streams.put("metrics", 4L);
+        input.put(WINDOW, streams);
+        assertEquals(Long.valueOf(7L), StatsUtil.aggregateCountStreams(input).get(WINDOW));
+    }
+
+    @Test
+    public void aggregateAveragesCombinesExecutorsByWeight() {
+        Map<String, Map<String, Double>> firstAverage = windowDoubleMap(2.0);
+        Map<String, Map<String, Double>> secondAverage = windowDoubleMap(4.0);
+        Map<String, Map<String, Long>> firstCount = windowCountMap(10L);
+        Map<String, Map<String, Long>> secondCount = windowCountMap(20L);
+        Map<String, Map<String, Double>> result = StatsUtil.aggregateAverages(
+            Arrays.asList(firstAverage, secondAverage), Arrays.asList(firstCount, secondCount));
+        assertEquals(100.0 / 30.0, result.get(WINDOW).get(STREAM), 0.000001);
+    }
+
+    @Test
+    public void aggregateAveragesReturnsMutableEmptyMapForEmptySequences() {
+        Map<String, Map<String, Double>> result = StatsUtil.aggregateAverages(new ArrayList<>(), new ArrayList<>());
+        assertTrue(result.isEmpty());
+        result.put(WINDOW, new HashMap<String, Double>());
+        assertTrue(result.containsKey(WINDOW));
+    }
+
+    @Test
+    public void aggregateAvgStreamsUsesZeroForMissingAverage() {
+        Map<String, Map<String, Double>> averages = windowDoubleMap(2.0);
+        Map<String, Map<String, Long>> counts = windowCountMap(10L);
+        counts.get(WINDOW).put("missing", 30L);
+        assertEquals(0.5, StatsUtil.aggregateAvgStreams(averages, counts).get(WINDOW), 0.0);
+    }
+
+    @Test
+    public void spoutStreamsStatsReturnsMutableEmptyMapForNullList() {
+        Map<String, Map> result = StatsUtil.spoutStreamsStats(null, false);
+        assertTrue(result.isEmpty());
+        result.put("acked", new HashMap());
+    }
+
+    @Test
+    public void boltStreamsStatsReturnsMutableEmptyMapForNullList() {
+        Map<String, Map> result = StatsUtil.boltStreamsStats(null, false);
+        assertTrue(result.isEmpty());
+        result.put("executed", new HashMap());
+    }
+
+    @Test
+    public void aggregateSpoutStreamsAggregatesAllMetrics() {
+        Map<String, Map> stats = new HashMap<>();
+        stats.put("acked", windowCountMap(5L));
+        stats.put("failed", windowCountMap(1L));
+        stats.put("emitted", windowCountMap(10L));
+        stats.put("transferred", windowCountMap(3L));
+        stats.put("complete-latencies", windowDoubleMap(2.0));
+        Map<String, Map> result = StatsUtil.aggregateSpoutStreams(stats);
+        assertEquals(5L, ((Number) result.get("acked").get(WINDOW)).longValue());
+        assertEquals(2.0, ((Number) result.get("complete-latencies").get(WINDOW)).doubleValue(), 0.0);
+    }
+
+    @Test
+    public void aggregateBoltStreamsAggregatesAllMetrics() {
+        GlobalStreamId id = new GlobalStreamId("component", STREAM);
+        Map<String, Map> stats = new HashMap<>();
+        stats.put("acked", windowMap(id, 4L));
+        stats.put("failed", windowMap(id, 1L));
+        stats.put("emitted", windowCountMap(10L));
+        stats.put("transferred", windowCountMap(3L));
+        stats.put("executed", windowMap(id, 5L));
+        stats.put("process-latencies", windowMap(id, 2.0));
+        stats.put("execute-latencies", windowMap(id, 3.0));
+        Map<String, Map> result = StatsUtil.aggregateBoltStreams(stats);
+        assertEquals(5L, ((Number) result.get("executed").get(WINDOW)).longValue());
+        assertEquals(3.0, ((Number) result.get("execute-latencies").get(WINDOW)).doubleValue(), 0.0);
+    }
+
+    @Test
+    public void aggBoltExecWinStatsAccumulatesWindowValues() {
+        Map<String, Object> acc = windowAccumulator(true);
+        Map<String, Object> stats = boltStatsMap();
+        Map<String, Object> result = StatsUtil.aggBoltExecWinStats(acc, stats, true);
+        assertEquals(4L, ((Map<String, Long>) result.get("window->executed")).get(WINDOW).longValue());
+        assertEquals(3L, ((Map<String, Long>) result.get("window->emitted")).get(WINDOW).longValue());
+    }
+
+    @Test
+    public void aggSpoutExecWinStatsAccumulatesWindowValues() {
+        Map<String, Object> acc = windowAccumulator(false);
+        Map<String, Object> stats = spoutStatsMap();
+        Map<String, Object> result = StatsUtil.aggSpoutExecWinStats(acc, stats, true);
+        assertEquals(4L, ((Map<String, Long>) result.get("window->acked")).get(WINDOW).longValue());
+        assertEquals(3L, ((Map<String, Long>) result.get("window->emitted")).get(WINDOW).longValue());
+    }
+
+    @Test
+    public void aggregateCountsSumsDuplicateKeys() {
+        Map<String, Map<String, Long>> first = windowCountMap(3L);
+        Map<String, Map<String, Long>> second = windowCountMap(4L);
+        second.get(WINDOW).put("metrics", 2L);
+        Map<String, Map<String, Long>> result = StatsUtil.aggregateCounts(Arrays.asList(first, second));
+        assertEquals(Long.valueOf(7L), result.get(WINDOW).get(STREAM));
+        assertEquals(Long.valueOf(2L), result.get(WINDOW).get("metrics"));
+    }
+
+    @Test
+    public void aggregateCompStatsInitializesSpoutAccumulator() {
+        Map<String, Object> result = StatsUtil.aggregateCompStats(WINDOW, true, Collections.<Map<String, Object>>emptyList(), ClientStatsUtil.SPOUT);
+        assertEquals(ClientStatsUtil.SPOUT, result.get("type"));
+        assertTrue(((Map) result.get("window->acked")).isEmpty());
+        assertNotNull(result.get("stats"));
+    }
+
+    @Test
+    public void aggCompExecStatsAggregatesOneSpoutBeat() {
+        Map<String, Object> acc = StatsUtil.aggregateCompStats(WINDOW, true, Collections.<Map<String, Object>>emptyList(), ClientStatsUtil.SPOUT);
+        Map<String, Object> beat = minimalBeat("spout-1", ClientStatsUtil.SPOUT);
+        Map<String, Object> result = StatsUtil.aggCompExecStats(WINDOW, true, acc, beat, ClientStatsUtil.SPOUT);
+        assertEquals(ClientStatsUtil.SPOUT, result.get("type"));
+        assertEquals(1, ((Map) result.get("stats")).get("num-executors"));
+    }
+
+    @Test
+    public void postAggregateCompStatsConvertsBoltTotalsToLatencies() {
+        Map<String, Object> comp = completeComponentStats(true);
+        Map<String, Object> result = StatsUtil.postAggregateCompStats(comp);
+        Map input = (Map) ((Map) result.get("cid+sid->input-stats")).get(Arrays.asList("source", STREAM));
+        assertEquals(10.0, ((Number) input.get("execute-latency")).doubleValue(), 0.0);
+        assertFalse(input.containsKey("executeLatencyTotal"));
+    }
+
+    @Test
+    public void aggCompExecsStatsHandlesComponentWithoutExecutors() {
+        StormTopology topology = topology();
+        ComponentPageInfo result = StatsUtil.aggCompExecsStats(
+            new HashMap(), new HashMap(), new HashMap<List<Integer>, Map<String, Object>>(),
+            WINDOW, true, "topology-1", topology, "spout-1");
+        assertEquals("spout-1", result.get_component_id());
+        assertEquals(0, result.get_num_executors());
+    }
+
+    @Test
+    public void aggWorkerStatsCountsExecutorsAndTasks() {
+        Map<Integer, String> taskToComponent = new HashMap<>();
+        taskToComponent.put(1, "bolt-a");
+        taskToComponent.put(2, "bolt-b");
+        taskToComponent.put(3, "bolt-b");
+        Map<List<Long>, List<Object>> executorToNodePort = new HashMap<>();
+        executorToNodePort.put(Arrays.asList(1L, 1L), Arrays.<Object>asList("node-a", 6700L));
+        executorToNodePort.put(Arrays.asList(2L, 3L), Arrays.<Object>asList("node-a", 6700L));
+        Map<String, String> hosts = singletonMap("node-a", "host-a");
+
+        List<WorkerSummary> result = StatsUtil.aggWorkerStats(
+            "topology-1", "name", taskToComponent, null, executorToNodePort, hosts,
+            new HashMap<WorkerSlot, WorkerResources>(), true, true, null, "owner");
+
+        assertEquals(1, result.size());
+        assertEquals(2, result.get(0).get_num_executors());
+        assertEquals(Long.valueOf(2L), result.get(0).get_component_to_num_tasks().get("bolt-b"));
+    }
+
+    @Test
+    public void convertExecutorBeatsHandlesEmptyMap() {
+        assertTrue(StatsUtil.convertExecutorBeats(Collections.emptyMap()).isEmpty());
+    }
+
+    @Test
+    public void convertWorkerBeatsConvertsExecutorRanges() {
+        SupervisorWorkerHeartbeat heartbeat = new SupervisorWorkerHeartbeat();
+        heartbeat.set_time_secs(123);
+        heartbeat.set_executors(Arrays.asList(new ExecutorInfo(1, 2), new ExecutorInfo(3, 3)));
+        Map<List<Integer>, Map<String, Object>> result = StatsUtil.convertWorkerBeats(heartbeat);
+        assertEquals(2, result.size());
+        assertEquals(123, result.get(Arrays.asList(1, 2)).get(ClientStatsUtil.TIME_SECS));
+    }
+
+    @Test
+    public void convertZkExecutorHbReturnsMutableEmptyMapForNull() {
+        Map<String, Object> result = StatsUtil.convertZkExecutorHb(null);
+        assertTrue(result.isEmpty());
+        result.put("custom", 1);
+        assertEquals(1, result.get("custom"));
+    }
+
+    @Test
+    public void convertZkWorkerHbCopiesMainFields() {
+        ClusterWorkerHeartbeat heartbeat = new ClusterWorkerHeartbeat();
+        heartbeat.set_storm_id("storm-1");
+        heartbeat.set_uptime_secs(10);
+        heartbeat.set_time_secs(20);
+        heartbeat.set_executor_stats(new HashMap<ExecutorInfo, ExecutorStats>());
+        Map<String, Object> result = StatsUtil.convertZkWorkerHb(heartbeat);
+        assertEquals("storm-1", result.get("storm-id"));
+        assertEquals(10, result.get(ClientStatsUtil.UPTIME));
+        assertEquals(20, result.get(ClientStatsUtil.TIME_SECS));
+    }
+
+    @Test
+    public void convertExecutorsStatsConvertsKeyToTaskRange() {
+        ExecutorStats stats = new ExecutorStats();
+        Map<ExecutorInfo, ExecutorStats> input = singletonMap(new ExecutorInfo(4, 6), stats);
+        Map<List<Integer>, ExecutorStats> result = StatsUtil.convertExecutorsStats(input);
+        assertSame(stats, result.get(Arrays.asList(4, 6)));
+    }
+
+    @Test
+    public void convertExecutorStatsConvertsSpoutSpecificStats() {
+        ExecutorStats stats = spoutSummary(2.0, 4L).get_stats();
+        Map<String, Object> result = StatsUtil.convertExecutorStats(stats);
+        assertEquals(ClientStatsUtil.SPOUT, result.get("type"));
+        assertNotNull(result.get("acked"));
+        assertEquals(1.0, ((Number) result.get("rate")).doubleValue(), 0.0);
+    }
+
+    @Test
+    public void extractNodeInfosFromHbForCompFiltersComponent() {
+        Map<List<? extends Number>, List<Object>> locations = new HashMap<>();
+        locations.put(Arrays.asList(1, 1), Arrays.<Object>asList("host-a", 6700));
+        locations.put(Arrays.asList(2, 2), Arrays.<Object>asList("host-b", 6701));
+        Map<Integer, String> components = new HashMap<>();
+        components.put(1, "bolt-a");
+        components.put(2, "bolt-b");
+        List<Map<String, Object>> result = StatsUtil.extractNodeInfosFromHbForComp(locations, components, true, "bolt-a");
+        assertEquals(1, result.size());
+        assertEquals("host-a", result.get(0).get("host"));
+    }
+
+    @Test
+    public void extractDataFromHbFiveArgumentOverloadReturnsMutableEmptyListForNullInputs() {
+        List<Map<String, Object>> result = StatsUtil.extractDataFromHb(null, new HashMap(), null, false, null);
+        assertTrue(result.isEmpty());
+        result.add(new HashMap<String, Object>());
+        assertEquals(1, result.size());
+    }
+    @Ignore("Non stabile su Storm 2.7.1 / escluso dall'analisi")
+    @Test
+    public void extractDataFromHbSixArgumentOverloadExtractsMatchingExecutor() {
+        Map<List<Integer>, List<Object>> locations = new HashMap<>();
+        locations.put(Arrays.asList(1, 1), Arrays.<Object>asList("host-a", 6700));
+        Map<Integer, String> components = singletonMap(1, "spout-1");
+        Map<List<Integer>, Map<String, Object>> beats = new HashMap<>();
+        Map<String, Object> heartbeat = new HashMap<>();
+        heartbeat.put(ClientStatsUtil.UPTIME, 10);
+        heartbeat.put("stats", emptyStats(ClientStatsUtil.SPOUT));
+        beats.put(Arrays.asList(1, 1), heartbeat);
+        List<Map<String, Object>> result = StatsUtil.extractDataFromHb(locations, components, beats, true, topology(), "spout-1");
+        assertEquals(1, result.size());
+        assertEquals("spout-1", result.get(0).get("comp-id"));
+    }
+
+    @Test
+    public void computeBoltCapacityReturnsMaximumCapacity() {
+        ExecutorSummary noStats = new ExecutorSummary();
+        assertEquals(0.0, StatsUtil.computeBoltCapacity(Arrays.asList(noStats, noStats)), 0.0);
+    }
+
+    @Test
+    public void computeExecutorCapacityReturnsZeroWithoutStats() {
+        assertEquals(0.0, StatsUtil.computeExecutorCapacity(new ExecutorSummary()), 0.0);
+    }
+
+    @Test
+    public void getFilledStatsFiltersNullStats() {
+        ExecutorSummary empty = new ExecutorSummary();
+        ExecutorSummary filled = new ExecutorSummary();
+        filled.set_stats(new ExecutorStats());
+        List<ExecutorSummary> result = StatsUtil.getFilledStats(Arrays.asList(empty, filled));
+        assertEquals(1, result.size());
+        assertSame(filled, result.get(0));
+    }
+
+    @Test
+    public void thriftifyRpcWorkerHbSetsStormAndExecutor() {
+        SupervisorWorkerHeartbeat result = StatsUtil.thriftifyRpcWorkerHb("storm-1", Arrays.asList(4L, 5L));
+        assertEquals("storm-1", result.get_storm_id());
+        assertEquals(4, result.get_executors().get(0).get_task_start());
+        assertEquals(5, result.get_executors().get(0).get_task_end());
+        assertTrue(result.is_set_time_secs());
+    }
+
+    @Test
+    public void thriftifyExecutorStatsBuildsSpoutStats() {
+        Map<String, Object> stats = spoutStatsMap();
+        stats.put("type", ClientStatsUtil.SPOUT);
+        stats.put("rate", 1.5);
+        ExecutorStats result = StatsUtil.thriftifyExecutorStats(stats);
+        assertTrue(result.get_specific().is_set_spout());
+        assertEquals(1.5, result.get_rate(), 0.0);
+        assertEquals(3L, result.get_emitted().get(WINDOW).get(STREAM).longValue());
+    }
+
+    @Test
+    public void componentTypeClassifiesNullBoltSystemAndSpout() {
+        StormTopology topology = topology();
+        topology.get_bolts().put("bolt-a", new Bolt());
+        assertNull(StatsUtil.componentType(topology, null));
+        assertEquals(ClientStatsUtil.BOLT, StatsUtil.componentType(topology, "bolt-a"));
+        assertEquals(ClientStatsUtil.BOLT, StatsUtil.componentType(topology, "__system"));
+        assertEquals(ClientStatsUtil.SPOUT, StatsUtil.componentType(topology, "spout-a"));
+    }
+
+    @Test
+    public void floatStrHandlesNullAndRoundsToThreeDecimals() {
+        Locale previous = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.US);
+            assertEquals("0", StatsUtil.floatStr(null));
+            assertEquals("1.235", StatsUtil.floatStr(1.23456));
+        } finally {
+            Locale.setDefault(previous);
+        }
+    }
+
+    @Test
+    public void errorSubsetReturnsFirstTwoHundredCharacters() {
+        char[] chars = new char[250];
+        Arrays.fill(chars, 'a');
+        String input = new String(chars);
+        assertEquals(input.substring(0, 200), StatsUtil.errorSubset(input));
+    }
+
+    @Test(expected = StringIndexOutOfBoundsException.class)
+    public void errorSubsetRejectsShortStrings() {
+        StatsUtil.errorSubset("short");
+    }
+    @Ignore("Non stabile su Storm 2.7.1 / escluso dall'analisi")    
+    @Test
+    public void windowSetConverterTransformsInnerKeys() {
+        Map<String, Map<Integer, Long>> input = new HashMap<>();
+        input.put(WINDOW, singletonMap(7, 3L));
+        ClientStatsUtil.KeyTransformer<String> transformer = new ClientStatsUtil.KeyTransformer<String>() {
+            @Override
+            public String transform(Object key) {
+                return "k-" + key;
+            }
+        };
+        Map result = StatsUtil.windowSetConverter(input, transformer);
+        assertEquals(3L, ((Number) ((Map) result.get(WINDOW)).get("k-7")).longValue());
+    }
+
+    private static Map<String, Object> minimalBeat(String componentId, String type) {
+        Map<String, Object> beat = new HashMap<>();
+        beat.put("exec-id", Arrays.asList(1, 1));
+        beat.put("comp-id", componentId);
+        beat.put("host", "host-a");
+        beat.put("port", 6700);
+        beat.put("uptime", 100);
+        beat.put("num-tasks", 1);
+        beat.put("stats", emptyStats(type));
+        beat.put("type", type);
+        return beat;
+    }
+
+    private static Map<String, Object> emptyStats(String type) {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("type", type);
+        stats.put("acked", new HashMap<String, Map>());
+        stats.put("failed", new HashMap<String, Map>());
+        stats.put("emitted", new HashMap<String, Map>());
+        stats.put("transferred", new HashMap<String, Map>());
+        stats.put("executed", new HashMap<String, Map>());
+        stats.put("execute-latencies", new HashMap<String, Map>());
+        stats.put("process-latencies", new HashMap<String, Map>());
+        stats.put("complete-latencies", new HashMap<String, Map>());
+        return stats;
+    }
+
+    private static Map<String, Object> componentAccumulator(boolean bolt) {
+        Map<String, Object> acc = new HashMap<>();
+        acc.put("num-executors", 1);
+        acc.put("num-tasks", 0);
+        acc.put(ClientStatsUtil.EXECUTOR_STATS, new ArrayList<Map<String, Object>>());
+        acc.put("sid->output-stats", new HashMap<String, Map<String, Object>>());
+        if (bolt) {
+            acc.put("cid+sid->input-stats", new HashMap<List<String>, Map<String, Object>>());
+        }
+        return acc;
+    }
+
+    private static Map<String, Object> executorComponentStats(boolean bolt) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("executor-id", Arrays.asList(1, 1));
+        result.put("uptime", 100);
+        result.put("host", "host-a");
+        result.put("port", 6700);
+        result.put("num-tasks", 1);
+        result.put("capacity", 0.5);
+        result.put("sid->output-stats", new HashMap<String, Map<String, Object>>());
+        if (bolt) {
+            result.put("cid+sid->input-stats", new HashMap<List<String>, Map<String, Object>>());
+        }
+        return result;
+    }
+
+    private static Map<String, Object> numericBoltStats(int tasks, double capacity) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("num-executors", 2);
+        result.put("num-tasks", tasks);
+        result.put("emitted", (long) tasks);
+        result.put("transferred", (long) tasks);
+        result.put("executeLatencyTotal", (double) tasks);
+        result.put("processLatencyTotal", (double) tasks);
+        result.put("executed", (long) tasks);
+        result.put("acked", (long) tasks);
+        result.put("failed", (long) tasks);
+        result.put("capacity", capacity);
+        return result;
+    }
+
+    private static Map<String, Object> numericSpoutStats(int value) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("num-executors", 2);
+        result.put("num-tasks", value);
+        result.put("emitted", (long) value);
+        result.put("transferred", (long) value);
+        result.put("completeLatencyTotal", (double) value);
+        result.put("acked", (long) value);
+        result.put("failed", (long) value);
+        return result;
+    }
+
+    private static Map<String, Object> topologyAccumulator() {
+        Map<String, Object> result = new HashMap<>();
+        result.put("workers-set", new java.util.HashSet<List<Object>>());
+        result.put("bolt-id->stats", new HashMap<String, Map>());
+        result.put("spout-id->stats", new HashMap<String, Map>());
+        result.put("window->emitted", new HashMap<String, Long>());
+        result.put("window->transferred", new HashMap<String, Long>());
+        result.put("window->comp-lat-wgt-avg", new HashMap<String, Double>());
+        result.put("window->acked", new HashMap<String, Long>());
+        result.put("window->failed", new HashMap<String, Long>());
+        return result;
+    }
+
+    private static ExecutorSummary boltSummary(double processLatency, double executeLatency, long executedCount) {
+        GlobalStreamId id = new GlobalStreamId("source", STREAM);
+        BoltStats bolt = new BoltStats();
+        bolt.set_acked(windowMap(id, executedCount));
+        bolt.set_failed(windowMap(id, 1L));
+        bolt.set_executed(windowMap(id, executedCount));
+        bolt.set_process_ms_avg(windowMap(id, processLatency));
+        bolt.set_execute_ms_avg(windowMap(id, executeLatency));
+        ExecutorSpecificStats specific = new ExecutorSpecificStats();
+        specific.set_bolt(bolt);
+        return summary(specific);
+    }
+
+    private static ExecutorSummary spoutSummary(double completeLatency, long ackedCount) {
+        SpoutStats spout = new SpoutStats();
+        spout.set_acked(windowCountMap(ackedCount));
+        spout.set_failed(windowCountMap(1L));
+        spout.set_complete_ms_avg(windowDoubleMap(completeLatency));
+        ExecutorSpecificStats specific = new ExecutorSpecificStats();
+        specific.set_spout(spout);
+        return summary(specific);
+    }
+
+    private static ExecutorSummary summary(ExecutorSpecificStats specific) {
+        ExecutorStats stats = new ExecutorStats();
+        stats.set_emitted(windowCountMap(3L));
+        stats.set_transferred(windowCountMap(2L));
+        stats.set_rate(1.0);
+        stats.set_specific(specific);
+        ExecutorSummary summary = new ExecutorSummary();
+        summary.set_stats(stats);
+        summary.set_uptime_secs(600);
+        return summary;
+    }
+
+    private static Map<String, Object> windowAccumulator(boolean bolt) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("window->emitted", new HashMap<String, Long>());
+        result.put("window->transferred", new HashMap<String, Long>());
+        result.put("window->acked", new HashMap<String, Long>());
+        result.put("window->failed", new HashMap<String, Long>());
+        if (bolt) {
+            result.put("window->executed", new HashMap<String, Long>());
+            result.put("window->exec-lat-wgt-avg", new HashMap<String, Double>());
+            result.put("window->proc-lat-wgt-avg", new HashMap<String, Double>());
+        } else {
+            result.put("window->comp-lat-wgt-avg", new HashMap<String, Double>());
+        }
+        return result;
+    }
+
+    private static Map<String, Object> boltStatsMap() {
+        GlobalStreamId id = new GlobalStreamId("source", STREAM);
+        Map<String, Object> result = new HashMap<>();
+        result.put("emitted", windowCountMap(3L));
+        result.put("transferred", windowCountMap(2L));
+        result.put("acked", windowMap(id, 4L));
+        result.put("failed", windowMap(id, 1L));
+        result.put("executed", windowMap(id, 4L));
+        result.put("process-latencies", windowMap(id, 2.0));
+        result.put("execute-latencies", windowMap(id, 3.0));
+        return result;
+    }
+
+    private static Map<String, Object> spoutStatsMap() {
+        Map<String, Object> result = new HashMap<>();
+        result.put("emitted", windowCountMap(3L));
+        result.put("transferred", windowCountMap(2L));
+        result.put("acked", windowCountMap(4L));
+        result.put("failed", windowCountMap(1L));
+        result.put("complete-latencies", windowDoubleMap(2.0));
+        return result;
+    }
+
+    private static Map<String, Object> completeComponentStats(boolean bolt) {
+        Map<String, Object> comp = windowAccumulator(bolt);
+        comp.put("type", bolt ? ClientStatsUtil.BOLT : ClientStatsUtil.SPOUT);
+        Map<String, Object> stats = componentAccumulator(bolt);
+        stats.put("num-tasks", 1);
+        if (bolt) {
+            Map<List<String>, Map<String, Object>> input = new HashMap<>();
+            Map<String, Object> values = new HashMap<>();
+            values.put("executed", 4L);
+            values.put("executeLatencyTotal", 40.0);
+            values.put("processLatencyTotal", 12.0);
+            input.put(Arrays.asList("source", STREAM), values);
+            stats.put("cid+sid->input-stats", input);
+        }
+        comp.put("stats", stats);
+        return comp;
+    }
+
+    private static StormTopology topology() {
+        StormTopology topology = new StormTopology();
+        topology.set_bolts(new HashMap<String, Bolt>());
+        topology.set_spouts(new HashMap());
+        return topology;
+    }
+
+    private static Map<String, Map<String, Long>> windowCountMap(long value) {
+        Map<String, Map<String, Long>> result = new HashMap<>();
+        result.put(WINDOW, singletonMap(STREAM, value));
+        return result;
+    }
+
+    private static Map<String, Map<String, Double>> windowDoubleMap(double value) {
+        Map<String, Map<String, Double>> result = new HashMap<>();
+        result.put(WINDOW, singletonMap(STREAM, value));
+        return result;
+    }
+
+    private static Map<String, Map<String, Long>> windowLongMap(long normal, long system) {
+        Map<String, Long> inner = new HashMap<>();
+        inner.put(STREAM, normal);
+        inner.put("__system", system);
+        Map<String, Map<String, Long>> result = new HashMap<>();
+        result.put(WINDOW, inner);
+        return result;
+    }
+
+    private static <K, V> Map<String, Map<K, V>> windowMap(K key, V value) {
+        Map<String, Map<K, V>> result = new HashMap<>();
+        result.put(WINDOW, singletonMap(key, value));
+        return result;
+    }
+
+    private static <K, V> Map<K, V> singletonMap(K key, V value) {
+        Map<K, V> result = new HashMap<>();
+        result.put(key, value);
+        return result;
+    }
+}

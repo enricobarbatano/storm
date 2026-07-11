@@ -60,17 +60,12 @@ import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings({"unchecked", "rawtypes", "java:S107", "java:S3776"})
+@SuppressWarnings("unchecked")
 public class StatsUtil {
     public static final String TYPE = "type";
     public static final int TEN_MIN_IN_SECONDS = 60 * 10;
     public static final String TEN_MIN_IN_SECONDS_STR = TEN_MIN_IN_SECONDS + "";
     private static final Logger LOG = LoggerFactory.getLogger(StatsUtil.class);
-
-    private StatsUtil() {
-        // Utility class.
-    }
-    
     private static final String HOST = "host";
     private static final String PORT = "port";
     private static final String NUM_TASKS = "num-tasks";
@@ -114,6 +109,9 @@ public class StatsUtil {
     private static final String WORKERS_SET = "workers-set";
     private static final ToStringTransformer TO_STRING = new ToStringTransformer();
     private static final FromGlobalStreamIdTransformer FROM_GSID = new FromGlobalStreamIdTransformer();
+
+    private StatsUtil() {
+    }
 
 
     // =====================================================================================
@@ -379,7 +377,7 @@ public class StatsUtil {
         subRet.putAll(aggSpoutLatAndCount(win2sid2compLat.get(window), win2sid2acked.get(window)));
 
         Map<String, Object> ret = new HashMap<>();
-        ret.put((String) m.get("comp-id"), subRet);
+        ret.put((String) m.get(COMP_ID), subRet);
         return ret;
     }
 
@@ -593,16 +591,12 @@ public class StatsUtil {
         // (merge-with merge-agg-comp-stats-topo-page-bolt/spout (acc-stats comp-key) cid->statk->num)
         // (acc-stats comp-key) ==> bolt2stats/spout2stats
         if (isSpout) {
-            for (Object entryObject : cid2stats.entrySet()) {
-                Map.Entry entry = (Map.Entry) entryObject;
-                String spout = (String) entry.getKey();
-                spout2stats.put(spout, mergeAggCompStatsTopoPageSpout((Map) spout2stats.get(spout), (Map) entry.getValue()));
+            for (String spout : cid2stats.keySet()) {
+                spout2stats.put(spout, mergeAggCompStatsTopoPageSpout((Map) spout2stats.get(spout), (Map) cid2stats.get(spout)));
             }
         } else {
-            for (Object entryObject : cid2stats.entrySet()) {
-                Map.Entry entry = (Map.Entry) entryObject;
-                String bolt = (String) entry.getKey();
-                bolt2stats.put(bolt, mergeAggCompStatsTopoPageBolt((Map) bolt2stats.get(bolt), (Map) entry.getValue()));
+            for (String bolt : cid2stats.keySet()) {
+                bolt2stats.put(bolt, mergeAggCompStatsTopoPageBolt((Map) bolt2stats.get(bolt), (Map) cid2stats.get(bolt)));
             }
         }
 
@@ -720,9 +714,9 @@ public class StatsUtil {
     public static <T> Map<String, Map> aggregateBoltStats(List<ExecutorSummary> statsSeq, boolean includeSys) {
         Map<String, Map> ret = new HashMap<>();
 
-        Map<String, Map<String, Map<T, Long>>> commonStats = aggregateCommonStats(statsSeq);
+        Map<String, Map<String, Map<String, Long>>> commonStats = aggregateCommonStats(statsSeq);
         // filter sys streams if necessary
-        preProcessStreamSummary(commonStats, includeSys);
+        commonStats = preProcessStreamSummary(commonStats, includeSys);
 
         List<Map<String, Map<GlobalStreamId, Long>>> acked = new ArrayList<>();
         List<Map<String, Map<GlobalStreamId, Long>>> failed = new ArrayList<>();
@@ -759,8 +753,6 @@ public class StatsUtil {
         Map<String, Map> ret = new HashMap<>();
 
         Map<String, Map<String, Map<String, Long>>> commonStats = aggregateCommonStats(statsSeq);
-        // filter sys streams if necessary
-        preProcessStreamSummary(commonStats, includeSys);
 
         List<Map<String, Map<String, Long>>> acked = new ArrayList<>();
         List<Map<String, Map<String, Long>>> failed = new ArrayList<>();
@@ -782,20 +774,26 @@ public class StatsUtil {
     /**
      * aggregate common stats from a spout/bolt, called in aggregateSpoutStats/aggregateBoltStats.
      */
-    public static <T> Map<String, Map<String, Map<T, Long>>> aggregateCommonStats(List<ExecutorSummary> statsSeq) {
-        Map<String, Map<String, Map<T, Long>>> ret = new HashMap<>();
+   
+        
+    public static Map<String, Map<String, Map<String, Long>>> aggregateCommonStats(
+        List<ExecutorSummary> statsSeq) {
+        Map<String, Map<String, Map<String, Long>>> ret = new HashMap<>();
 
         List<Map<String, Map<String, Long>>> emitted = new ArrayList<>();
         List<Map<String, Map<String, Long>>> transferred = new ArrayList<>();
+
         for (ExecutorSummary summ : statsSeq) {
             emitted.add(summ.get_stats().get_emitted());
             transferred.add(summ.get_stats().get_transferred());
         }
+
         ret.put(EMITTED, aggregateCounts(emitted));
         ret.put(TRANSFERRED, aggregateCounts(transferred));
 
         return ret;
     }
+
 
     /**
      * filter system streams of aggregated spout/bolt stats if necessary.
@@ -843,18 +841,14 @@ public class StatsUtil {
         Map<String, Map<K, Double>> ret = new HashMap<>();
 
         Map<String, Map<K, List>> expands = expandAveragesSeq(avgSeq, countSeq);
-        if (expands == null) {
-            return ret;
-        }
         for (Map.Entry<String, Map<K, List>> entry : expands.entrySet()) {
             String k = entry.getKey();
 
             Map<K, Double> tmp = new HashMap<>();
             Map<K, List> inner = entry.getValue();
             for (Map.Entry<K, List> innerEntry : inner.entrySet()) {
-                K kk = innerEntry.getKey();
                 List vv = innerEntry.getValue();
-                tmp.put(kk, valAvg(((Number) vv.get(0)).doubleValue(), ((Number) vv.get(1)).longValue()));
+                tmp.put(innerEntry.getKey(), valAvg(((Number) vv.get(0)).doubleValue(), ((Number) vv.get(1)).longValue()));
             }
             ret.put(k, tmp);
         }
@@ -880,9 +874,7 @@ public class StatsUtil {
             double avgTotal = 0.0;
             long cntTotal = 0L;
             Map<K, List> inner = entry.getValue();
-            for (Map.Entry<K, List> innerEntry : inner.entrySet()) {
-                K kk = innerEntry.getKey();
-                List vv = innerEntry.getValue();
+            for (List vv : inner.values()) {
                 avgTotal += ((Number) vv.get(0)).doubleValue();
                 cntTotal += ((Number) vv.get(1)).longValue();
             }
@@ -1048,17 +1040,10 @@ public class StatsUtil {
                 String win = entry.getKey();
                 Map<T, Long> stream2count = entry.getValue();
 
-                if (!ret.containsKey(win)) {
-                    ret.put(win, stream2count);
-                } else {
-                    Map<T, Long> existing = ret.get(win);
+                Map<T, Long> existing = ret.computeIfAbsent(win, ignored -> stream2count);
+                if (existing != stream2count) {
                     for (Map.Entry<T, Long> subEntry : stream2count.entrySet()) {
-                        T stream = subEntry.getKey();
-                        if (!existing.containsKey(stream)) {
-                            existing.put(stream, subEntry.getValue());
-                        } else {
-                            existing.put(stream, subEntry.getValue() + existing.get(stream));
-                        }
+                        existing.merge(subEntry.getKey(), subEntry.getValue(), Long::sum);
                     }
                 }
             }
@@ -1533,8 +1518,8 @@ public class StatsUtil {
 
             Map<String, Object> m = new HashMap<>();
             if ((compId == null || compId.equals(id)) && (includeSys || !Utils.isSystemId(id))) {
-                m.put("exec-id", entry.getKey());
-                m.put("comp-id", id);
+                m.put(EXEC_ID, entry.getKey());
+                m.put(COMP_ID, id);
                 m.put(NUM_TASKS, end - start + 1);
                 m.put(HOST, host);
                 m.put(PORT, port);
@@ -1566,7 +1551,8 @@ public class StatsUtil {
     private static Map<String, Double> computeWeightedAveragesPerWindow(Map<String, Object> accData,
                                                                         String wgtAvgKey, String divisorKey) {
         Map<String, Double> ret = new HashMap<>();
-        for (Map.Entry e : ((Map<?, ?>) ClientStatsUtil.getMapByKey(accData, wgtAvgKey)).entrySet()) {
+        for (Object o : ClientStatsUtil.getMapByKey(accData, wgtAvgKey).entrySet()) {
+            Map.Entry e = (Map.Entry) o;
             Object window = e.getKey();
             double wgtAvg = ((Number) e.getValue()).doubleValue();
             long divisor = ((Number) ClientStatsUtil.getMapByKey(accData, divisorKey).get(window)).longValue();
@@ -1603,21 +1589,22 @@ public class StatsUtil {
         ExecutorStats stats = summary.get_stats();
         if (stats == null) {
             return 0.0;
-        } else {
-            // actual value of m is: Map<String, Map<String/GlobalStreamId, Long/Double>> ({win -> stream -> value})
-            Map<String, Map> m = aggregateBoltStats(Lists.newArrayList(summary), true);
-            m = swapMapOrder(aggregateBoltStreams(m));
-            Map data = ClientStatsUtil.getMapByKey(m, TEN_MIN_IN_SECONDS_STR);
-
-            int uptime = summary.get_uptime_secs();
-            int win = Math.min(uptime, TEN_MIN_IN_SECONDS);
-            long executed = getByKeyOr0(data, EXECUTED).longValue();
-            double latency = getByKeyOr0(data, EXEC_LATENCIES).doubleValue();
-            if (win > 0) {
-                return executed * latency / (1000 * win);
-            }
-            return 0.0;
         }
+        // actual value of m is: Map<String, Map<String/GlobalStreamId, Long/Double>> ({win -> stream -> value})
+        Map<String, Map> m = aggregateBoltStats(Lists.newArrayList(summary), true);
+        // {metric -> win -> value} ==> {win -> metric -> value}
+        m = swapMapOrder(aggregateBoltStreams(m));
+        // {metric -> value}
+        Map data = ClientStatsUtil.getMapByKey(m, TEN_MIN_IN_SECONDS_STR);
+
+        int uptime = summary.get_uptime_secs();
+        int win = Math.min(uptime, TEN_MIN_IN_SECONDS);
+        long executed = getByKeyOr0(data, EXECUTED).longValue();
+        double latency = getByKeyOr0(data, EXEC_LATENCIES).doubleValue();
+        if (win > 0) {
+            return executed * latency / (1000 * win);
+        }
+        return 0.0;
     }
 
     /**
@@ -2119,6 +2106,7 @@ public class StatsUtil {
     /*
      * the value of m is as follows:
      * <pre>
+     * #org.apache.storm.stats.CommonStats {
      *  :executed {
      *      ":all-time" {["split" "default"] 18727460},
      *      "600" {["split" "default"] 11554},
@@ -2265,14 +2253,15 @@ public class StatsUtil {
         }
 
         Map ret = new HashMap();
-        for (Object entryObject : m.entrySet()) {
-            Map.Entry entry = (Map.Entry) entryObject;
-            Object k1 = entry.getKey();
-            Map v = (Map) entry.getValue();
+        for (Object object : m.entrySet()) {
+            Map.Entry topEntry = (Map.Entry) object;
+            Object k1 = topEntry.getKey();
+            Map v = (Map) topEntry.getValue();
             if (v != null) {
-                for (Object nestedEntryObject : v.entrySet()) {
-                    Map.Entry nestedEntry = (Map.Entry) nestedEntryObject;
-                    Map subRet = (Map) ret.computeIfAbsent(nestedEntry.getKey(), ignored -> new HashMap());
+                for (Object nestedObject : v.entrySet()) {
+                    Map.Entry nestedEntry = (Map.Entry) nestedObject;
+                    Object k2 = nestedEntry.getKey();
+                    Map subRet = (Map) ret.computeIfAbsent(k2, ignored -> new HashMap<>());
                     subRet.put(k1, nestedEntry.getValue());
                 }
             }
@@ -2290,12 +2279,14 @@ public class StatsUtil {
                                                                 Map<String, Map<K, Long>> counts) {
         Map<String, Map<K, List>> ret = new HashMap<>();
 
-        for (String win : counts.keySet()) {
+        for (Map.Entry<String, Map<K, Long>> countEntry : counts.entrySet()) {
+            String win = countEntry.getKey();
             Map<K, List> inner = new HashMap<>();
 
-            Map<K, Long> stream2cnt = counts.get(win);
-            for (K stream : stream2cnt.keySet()) {
-                Long cnt = stream2cnt.get(stream);
+            Map<K, Long> stream2cnt = countEntry.getValue();
+            for (Map.Entry<K, Long> streamEntry : stream2cnt.entrySet()) {
+                K stream = streamEntry.getKey();
+                Long cnt = streamEntry.getValue();
                 Double avg = avgs.get(win).get(stream);
                 if (avg == null) {
                     avg = 0.0;
@@ -2319,7 +2310,7 @@ public class StatsUtil {
         Map<String, Map<K, List>> initVal = null;
         for (int i = 0; i < avgSeq.size(); i++) {
             Map<String, Map<K, Double>> avg = avgSeq.get(i);
-            Map<String, Map<K, Long>> count = (Map) countSeq.get(i);
+            Map<String, Map<K, Long>> count = countSeq.get(i);
             if (initVal == null) {
                 initVal = expandAverages(avg, count);
             } else {
