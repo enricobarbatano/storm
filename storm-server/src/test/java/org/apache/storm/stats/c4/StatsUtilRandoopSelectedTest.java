@@ -29,7 +29,7 @@ public class StatsUtilRandoopSelectedTest {
 
     @Test
     public void testFloatStr() {
-        assertEquals("10,000", StatsUtil.floatStr(10.0d));
+        assertEquals(String.format("%.3f", 10.0d), StatsUtil.floatStr(10.0d));
     }
 
     @Test

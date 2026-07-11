@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
 import org.apache.storm.cluster.ExecutorBeat;
 import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.generated.Bolt;
@@ -588,6 +587,9 @@ public class StatsUtil {
 
         ret.put(WIN_TO_FAILED, v);
         ret.put(TYPE, stats.get(TYPE));
+
+        // (merge-with merge-agg-comp-stats-topo-page-bolt/spout (acc-stats comp-key) cid->statk->num)
+        // (acc-stats comp-key) ==> bolt2stats/spout2stats
         if (isSpout) {
             for (String spout : cid2stats.keySet()) {
                 spout2stats.put(spout, mergeAggCompStatsTopoPageSpout((Map) spout2stats.get(spout), (Map) cid2stats.get(spout)));
@@ -712,7 +714,7 @@ public class StatsUtil {
     public static <T> Map<String, Map> aggregateBoltStats(List<ExecutorSummary> statsSeq, boolean includeSys) {
         Map<String, Map> ret = new HashMap<>();
 
-        Map<String, Map<String, Map<T, Long>>> commonStats = aggregateCommonStats(statsSeq);
+        Map<String, Map<String, Map<String, Long>>> commonStats = aggregateCommonStats(statsSeq);
         // filter sys streams if necessary
         commonStats = preProcessStreamSummary(commonStats, includeSys);
 
@@ -774,8 +776,9 @@ public class StatsUtil {
     /**
      * aggregate common stats from a spout/bolt, called in aggregateSpoutStats/aggregateBoltStats.
      */
-    public static <T> Map<String, Map<String, Map<T, Long>>> aggregateCommonStats(List<ExecutorSummary> statsSeq) {
-        Map<String, Map<String, Map<T, Long>>> ret = new HashMap<>();
+    public static Map<String, Map<String, Map<String, Long>>> aggregateCommonStats(
+        List<ExecutorSummary> statsSeq) {
+        Map<String, Map<String, Map<String, Long>>> ret = new HashMap<>();
 
         List<Map<String, Map<String, Long>>> emitted = new ArrayList<>();
         List<Map<String, Map<String, Long>>> transferred = new ArrayList<>();
@@ -783,10 +786,8 @@ public class StatsUtil {
             emitted.add(summ.get_stats().get_emitted());
             transferred.add(summ.get_stats().get_transferred());
         }
-     
-        ret.put(EMITTED, (Map) aggregateCounts(emitted));
-        ret.put(TRANSFERRED, (Map) aggregateCounts(transferred));
-
+        ret.put(EMITTED, aggregateCounts(emitted));
+        ret.put(TRANSFERRED, aggregateCounts(transferred));
 
         return ret;
     }
