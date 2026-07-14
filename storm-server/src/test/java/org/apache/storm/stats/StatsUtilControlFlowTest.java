@@ -22,78 +22,45 @@ import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.SupervisorWorkerHeartbeat;
 import org.junit.jupiter.api.Test;
 
-/**
- * Seconda parte dei test manuali black-box per StatsUtil.
-
- * I test coprono:
- *
- * F5 - utility semplici;
- * F6 - classificazione dei componenti;
- * F7 - conversione di heartbeat e statistiche;
- * F8 - aggregazione completa degli stream;
- * F9 - filtraggio degli stream di sistema ed estrazione host/port.
- */
+// Test manuali white-box per StatsUtil progettati durante la fase di
+// Control-Flow Testing.
+// I metodi e i rami sono stati selezionati analizzando i gap di copertura
+// evidenziati da JaCoCo dopo l'esecuzione della suite Category Partition.
 public class StatsUtilControlFlowTest {
 
-    /*
-     * Test 15
-     *
-     * F5 - utility semplici.
-     *
-     * Categoria:
-     * valore null.
-     *
-     * Oracolo:
-     * floatStr(null) deve restituire "0".
-     */
+    // TC15
+    // Ramo coperto: floatStr(null).
+    // Risultato atteso: viene restituita una rappresentazione testuale
+    // equivalente al valore numerico zero.
     @Test
     public void floatStrConValoreNullRestituisceZeroComeStringa() {
         String result = StatsUtil.floatStr(null);
-
         assertEquals("0", result);
     }
 
-    /*
-     * Test 16
-     *
-     * F5 - utility semplici.
-     *
-     * Categoria:
-     * valore Double positivo.
-     *
-     * Oracolo:
-     * floatStr formatta il numero con tre cifre decimali.
-     */
+    // TC16
+    // Ramo coperto: floatStr(Double).
+    // Risultato atteso: il valore decimale viene formattato con tre cifre
+    // decimali, in modo coerente con il locale impostato.
     @Test
     public void floatStrConValoreDecimaleRestituisceStringaConTreDecimali() {
         Locale previousLocale = Locale.getDefault();
-
         try {
             Locale.setDefault(Locale.US);
-
             String result = StatsUtil.floatStr(1.23456);
-
             assertEquals("1.235", result);
         } finally {
             Locale.setDefault(previousLocale);
         }
     }
 
-    /*
-     * Test 17
-     *
-     * F5 - utility semplici.
-     *
-     * Boundary:
-     * stringa più lunga di 200 caratteri.
-     *
-     * Oracolo:
-     * errorSubset restituisce i primi 200 caratteri.
-     */
+    // TC17
+    // Ramo coperto: errorSubset(String) con input oltre il limite.
+    // Risultato atteso: la stringa viene troncata alla lunghezza massima
+    // prevista dal metodo.
     @Test
     public void errorSubsetConStringaLungaRestituiscePrimiDuecentoCaratteri() {
         StringBuilder builder = new StringBuilder();
-
         for (int i = 0; i < 250; i++) {
             builder.append('a');
         }
@@ -104,17 +71,10 @@ public class StatsUtilControlFlowTest {
         assertEquals(builder.substring(0, 200), result);
     }
 
-    /*
-     * Test 18
-     *
-     * F6 - classificazione componenti.
-     *
-     * Categoria:
-     * componentId null.
-     *
-     * Oracolo:
-     * componentType deve restituire null.
-     */
+    // TC18
+    // Ramo coperto: componentType(..., null).
+    // Risultato atteso: in assenza dell'identificativo del componente viene
+    // restituito null.
     @Test
     public void componentTypeConComponentIdNullRestituisceNull() {
         StormTopology topology = new StormTopology();
@@ -125,17 +85,10 @@ public class StatsUtilControlFlowTest {
         assertNull(result);
     }
 
-    /*
-     * Test 19
-     *
-     * F6 - classificazione componenti.
-     *
-     * Categoria:
-     * componente presente nella mappa dei bolt.
-     *
-     * Oracolo:
-     * componentType restituisce BOLT.
-     */
+    // TC19
+    // Ramo coperto: componentType(..., bolt).
+    // Risultato atteso: un componente presente nella mappa dei Bolt viene
+    // classificato come Bolt.
     @Test
     public void componentTypeConBoltPresenteRestituisceBolt() {
         StormTopology topology = new StormTopology();
@@ -148,17 +101,10 @@ public class StatsUtilControlFlowTest {
         assertEquals(ClientStatsUtil.BOLT, result);
     }
 
-    /*
-     * Test 20
-     *
-     * F6 - classificazione componenti.
-     *
-     * Categoria:
-     * componente non presente tra i bolt.
-     *
-     * Oracolo:
-     * se il componente non è un bolt e non è di sistema, viene considerato SPOUT.
-     */
+    // TC20
+    // Ramo coperto: componentType(..., spout).
+    // Risultato atteso: un componente non presente tra i Bolt e non di sistema
+    // viene classificato come Spout.
     @Test
     public void componentTypeConComponenteNonBoltRestituisceSpout() {
         StormTopology topology = new StormTopology();
@@ -169,17 +115,9 @@ public class StatsUtilControlFlowTest {
         assertEquals(ClientStatsUtil.SPOUT, result);
     }
 
-    /*
-     * Test 21
-     *
-     * F6 - classificazione componenti.
-     *
-     * Categoria:
-     * componente di sistema.
-     *
-     * Oracolo:
-     * i componenti di sistema vengono classificati come BOLT.
-     */
+    // TC21
+    // Ramo coperto: componentType(..., system).
+    // Risultato atteso: un componente di sistema viene classificato come Bolt.
     @Test
     public void componentTypeConComponenteDiSistemaRestituisceBolt() {
         StormTopology topology = new StormTopology();
@@ -190,41 +128,27 @@ public class StatsUtilControlFlowTest {
         assertEquals(ClientStatsUtil.BOLT, result);
     }
 
-    /*
-     * Test 22
-     *
-     * F7 - conversione e filtro statistiche.
-     *
-     * Categoria:
-     * lista di ExecutorSummary con stats null e non null.
-     *
-     * Oracolo:
-     * getFilledStats deve tenere solo gli ExecutorSummary con stats valorizzate.
-     */
+    // TC22
+    // Metodo coperto: getFilledStats(...).
+    // Risultato atteso: la lista contiene soltanto gli ExecutorSummary con
+    // statistiche valorizzate.
     @Test
     public void getFilledStatsFiltraExecutorSummarySenzaStats() {
         ExecutorSummary withoutStats = new ExecutorSummary();
-
         ExecutorSummary withStats = new ExecutorSummary();
         withStats.set_stats(new ExecutorStats());
 
-        List<ExecutorSummary> result = StatsUtil.getFilledStats(Arrays.asList(withoutStats, withStats));
+        List<ExecutorSummary> result =
+            StatsUtil.getFilledStats(Arrays.asList(withoutStats, withStats));
 
         assertEquals(1, result.size());
         assertSame(withStats, result.get(0));
     }
 
-    /*
-     * Test 23
-     *
-     * F7 - conversione heartbeat worker.
-     *
-     * Categoria:
-     * heartbeat con due executor.
-     *
-     * Oracolo:
-     * convertWorkerBeats crea una entry per ogni executor e mantiene time_secs.
-     */
+    // TC23
+    // Metodo coperto: convertWorkerBeats(...).
+    // Risultato atteso: viene prodotta una voce per ciascun executor e vengono
+    // mantenute le informazioni temporali dell'heartbeat.
     @Test
     public void convertWorkerBeatsConDueExecutorCreaUnaEntryPerExecutor() {
         SupervisorWorkerHeartbeat heartbeat = new SupervisorWorkerHeartbeat();
@@ -241,22 +165,14 @@ public class StatsUtilControlFlowTest {
         assertEquals(123, result.get(Arrays.asList(2, 3)).get(ClientStatsUtil.TIME_SECS));
     }
 
-    /*
-     * Test 24
-     *
-     * F7 - conversione statistiche executor.
-     *
-     * Categoria:
-     * mappa con un ExecutorInfo.
-     *
-     * Oracolo:
-     * convertExecutorsStats converte la chiave ExecutorInfo in lista [start, end].
-     */
+    // TC24
+    // Metodo coperto: convertExecutorsStats(...).
+    // Risultato atteso: ogni chiave ExecutorInfo viene convertita nella coppia
+    // contenente il task iniziale e quello finale.
     @Test
     public void convertExecutorsStatsConverteExecutorInfoInListaStartEnd() {
         ExecutorInfo executorInfo = new ExecutorInfo(1, 2);
         ExecutorStats executorStats = new ExecutorStats();
-
         Map<ExecutorInfo, ExecutorStats> stats = new HashMap<>();
         stats.put(executorInfo, executorStats);
 
@@ -266,35 +182,20 @@ public class StatsUtilControlFlowTest {
         assertSame(executorStats, result.get(Arrays.asList(1, 2)));
     }
 
-    /*
-     * Test 25
-     *
-     * F7 - conversione heartbeat worker.
-     *
-     * Categoria:
-     * heartbeat null.
-     *
-     * Oracolo:
-     * convertZkWorkerHb(null) restituisce una mappa vuota.
-     */
+    // TC25
+    // Ramo coperto: convertZkWorkerHb(null).
+    // Risultato atteso: in presenza di un heartbeat nullo viene restituita una
+    // mappa vuota.
     @Test
     public void convertZkWorkerHbConInputNullRestituisceMappaVuota() {
         Map<String, Object> result = StatsUtil.convertZkWorkerHb(null);
-
         assertTrue(result.isEmpty());
     }
 
-    /*
-     * Test 26
-     *
-     * F7 - conversione heartbeat worker.
-     *
-     * Categoria:
-     * heartbeat valorizzato ma senza executor stats.
-     *
-     * Oracolo:
-     * vengono mantenuti storm-id, uptime e time-secs.
-     */
+    // TC26
+    // Metodo coperto: convertZkWorkerHb(...).
+    // Risultato atteso: la mappa conserva identificativo della topologia,
+    // uptime, tempo dell'heartbeat e statistiche degli executor.
     @Test
     public void convertZkWorkerHbConHeartbeatValorizzatoCopiaCampiPrincipali() {
         ClusterWorkerHeartbeat heartbeat = new ClusterWorkerHeartbeat();
@@ -311,18 +212,10 @@ public class StatsUtilControlFlowTest {
         assertTrue(((Map) result.get(ClientStatsUtil.EXECUTOR_STATS)).isEmpty());
     }
 
-    /*
-     * Test 27
-     *
-     * F7 - thriftify heartbeat.
-     *
-     * Categoria:
-     * storm id e executor id validi.
-     *
-     * Oracolo:
-     * thriftifyRpcWorkerHb crea un SupervisorWorkerHeartbeat con storm id
-     * e un executor corrispondente alla coppia passata.
-     */
+    // TC27
+    // Metodo coperto: thriftifyRpcWorkerHb(...).
+    // Risultato atteso: viene creato un heartbeat RPC con identificativo della
+    // topologia, executor richiesto e tempo di creazione valorizzato.
     @Test
     public void thriftifyRpcWorkerHbCreaHeartbeatConStormIdEdExecutor() {
         SupervisorWorkerHeartbeat result =
@@ -335,17 +228,10 @@ public class StatsUtilControlFlowTest {
         assertTrue(result.is_set_time_secs());
     }
 
-    /*
-     * Test 28
-     *
-     * F8 - aggregazione completa stream spout.
-     *
-     * Categoria:
-     * statistiche spout con acked, failed, emitted, transferred e complete latency.
-     *
-     * Oracolo:
-     * aggregateSpoutStreams aggrega contatori e media pesata per finestra.
-     */
+    // TC28
+    // Metodo coperto: aggregateSpoutStreams(...).
+    // Risultato atteso: le statistiche Spout vengono aggregate per finestra,
+    // producendo i contatori complessivi e la latenza media pesata.
     @Test
     public void aggregateSpoutStreamsAggregaContatoriELatenzaPerFinestra() {
         Map<String, Map> stats = new HashMap<>();
@@ -390,22 +276,17 @@ public class StatsUtilControlFlowTest {
         assertEquals(1L, ((Number) result.get("failed").get("600")).longValue());
         assertEquals(30L, ((Number) result.get("emitted").get("600")).longValue());
         assertEquals(4L, ((Number) result.get("transferred").get("600")).longValue());
-
-        // Media pesata: (2*5 + 4*7) / 12 = 38 / 12.
-        assertEquals(38.0 / 12.0, ((Number) result.get("complete-latencies").get("600")).doubleValue(), 0.0001);
+        assertEquals(
+            38.0 / 12.0,
+            ((Number) result.get("complete-latencies").get("600")).doubleValue(),
+            0.0001
+        );
     }
 
-    /*
-     * Test 29
-     *
-     * F8 - aggregazione completa stream bolt.
-     *
-     * Categoria:
-     * statistiche bolt con contatori e latenze.
-     *
-     * Oracolo:
-     * aggregateBoltStreams aggrega contatori e medie pesate per finestra.
-     */
+    // TC29
+    // Metodo coperto: aggregateBoltStreams(...).
+    // Risultato atteso: le statistiche Bolt vengono aggregate per finestra,
+    // producendo i contatori complessivi e le latenze medie pesate.
     @Test
     public void aggregateBoltStreamsAggregaContatoriELatenzePerFinestra() {
         Map<String, Map> stats = new HashMap<>();
@@ -464,17 +345,10 @@ public class StatsUtilControlFlowTest {
         assertEquals(3.0, ((Number) result.get("execute-latencies").get("600")).doubleValue(), 0.0001);
     }
 
-    /*
-     * Test 30
-     *
-     * F8 - aggregazione medie da più executor.
-     *
-     * Categoria:
-     * due sequenze con stessa finestra e stessa stream.
-     *
-     * Oracolo:
-     * aggregateAverages calcola la media pesata tra più mappe.
-     */
+    // TC30
+    // Metodo coperto: aggregateAverages(...).
+    // Risultato atteso: viene calcolata la media pesata combinando più
+    // sequenze di medie e conteggi relative alla stessa finestra e stream.
     @Test
     public void aggregateAveragesConDueSequenzeCalcolaMediaPesata() {
         Map<String, Map<String, Double>> avg1 = new HashMap<>();
@@ -497,23 +371,18 @@ public class StatsUtilControlFlowTest {
         countWindow2.put("default", 5L);
         count2.put("600", countWindow2);
 
-        Map<String, Map<String, Double>> result =
-            StatsUtil.aggregateAverages(Arrays.asList(avg1, avg2), Arrays.asList(count1, count2));
+        Map<String, Map<String, Double>> result = StatsUtil.aggregateAverages(
+            Arrays.asList(avg1, avg2),
+            Arrays.asList(count1, count2)
+        );
 
         assertEquals(3.0, result.get("600").get("default"), 0.0001);
     }
 
-    /*
-     * Test 31
-     *
-     * F9 - filtraggio stream di sistema.
-     *
-     * Categoria:
-     * includeSys = false.
-     *
-     * Oracolo:
-     * preProcessStreamSummary rimuove gli stream di sistema da emitted e transferred.
-     */
+    // TC31
+    // Ramo coperto: preProcessStreamSummary(..., false).
+    // Risultato atteso: gli stream di sistema vengono rimossi, mentre gli
+    // stream ordinari vengono mantenuti.
     @Test
     public void preProcessStreamSummaryConIncludeSysFalseRimuoveStreamDiSistema() {
         Map<String, Map<String, Map<String, Long>>> streamSummary = new HashMap<>();
@@ -541,17 +410,10 @@ public class StatsUtilControlFlowTest {
         assertFalse(result.get("transferred").get("600").containsKey("__system"));
     }
 
-    /*
-     * Test 32
-     *
-     * F9 - filtraggio stream di sistema.
-     *
-     * Categoria:
-     * includeSys = true.
-     *
-     * Oracolo:
-     * preProcessStreamSummary mantiene anche gli stream di sistema.
-     */
+    // TC32
+    // Ramo coperto: preProcessStreamSummary(..., true).
+    // Risultato atteso: la struttura risultante mantiene sia gli stream
+    // ordinari sia quelli di sistema.
     @Test
     public void preProcessStreamSummaryConIncludeSysTrueMantieneStreamDiSistema() {
         Map<String, Map<String, Map<String, Long>>> streamSummary = new HashMap<>();
@@ -578,17 +440,10 @@ public class StatsUtilControlFlowTest {
         assertTrue(result.get("transferred").get("600").containsKey("__system"));
     }
 
-    /*
-     * Test 33
-     *
-     * F9 - estrazione informazioni host/port da heartbeat.
-     *
-     * Categoria:
-     * componente specifico non di sistema.
-     *
-     * Oracolo:
-     * extractNodeInfosFromHbForComp restituisce solo host/port associati al componente richiesto.
-     */
+    // TC33
+    // Metodo coperto: extractNodeInfosFromHbForComp(...).
+    // Risultato atteso: vengono restituite esclusivamente le informazioni
+    // host e porta associate al componente richiesto.
     @Test
     public void extractNodeInfosFromHbForCompRestituisceSoloComponenteRichiesto() {
         Map<List<? extends Number>, List<Object>> execToHostPort = new HashMap<>();
@@ -608,8 +463,12 @@ public class StatsUtilControlFlowTest {
         taskToComponent.put(1, "bolt-1");
         taskToComponent.put(2, "spout-1");
 
-        List<Map<String, Object>> result =
-            StatsUtil.extractNodeInfosFromHbForComp(execToHostPort, taskToComponent, false, "bolt-1");
+        List<Map<String, Object>> result = StatsUtil.extractNodeInfosFromHbForComp(
+            execToHostPort,
+            taskToComponent,
+            false,
+            "bolt-1"
+        );
 
         assertEquals(1, result.size());
         assertEquals("host-a", result.get(0).get("host"));

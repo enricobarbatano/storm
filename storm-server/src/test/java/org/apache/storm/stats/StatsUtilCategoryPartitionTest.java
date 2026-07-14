@@ -80,6 +80,16 @@ import org.junit.jupiter.api.Test;
  *
  * La scelta dei test è unidimensionale: ogni classe rilevante viene coperta
  * almeno una volta, senza provare tutte le combinazioni possibili.
+ * 
+ * 
+ * 
+ * Tracciabilità:
+ * - TC01-TC05 coprono F1;
+ * - TC06-TC08 coprono F2;
+ * - TC09-TC11 coprono F3;
+ * - TC12-TC14 coprono F4.
+
+ * 
  */
 public class StatsUtilCategoryPartitionTest {
 
