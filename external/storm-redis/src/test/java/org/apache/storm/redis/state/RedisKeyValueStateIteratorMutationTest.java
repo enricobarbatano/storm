@@ -6,6 +6,7 @@ import java.util.Map.Entry;
 
 import org.apache.storm.redis.common.commands.RedisCommands;
 import org.apache.storm.redis.common.container.RedisCommandsInstanceContainer;
+import org.apache.storm.redis.state.refactoring.RedisKeyValueStateIterator;
 import org.apache.storm.state.DefaultStateEncoder;
 import org.apache.storm.state.Serializer;
 import org.junit.After;
@@ -16,15 +17,11 @@ import org.mockito.Mock;
 import static org.mockito.Mockito.when;
 import org.mockito.MockitoAnnotations;
 
-/**
- * Test aggiunto dopo l'analisi PIT.
- *
- * Il mutante sopravvissuto sostituiva il valore di ritorno di
- * isTombstoneValue(byte[]) con false.
- *
- * Questo test copre il caso positivo: un valore uguale al tombstone
- * deve essere riconosciuto come tombstone.
- */
+// Test manuale white-box aggiunto dopo l'analisi del report PIT.
+// Il mutante sopravvissuto sostituiva con false il valore restituito
+// da isTombstoneValue(byte[]).
+// Il test verifica il caso positivo: un valore uguale al tombstone
+// deve essere riconosciuto come marcatore di cancellazione.
 public class RedisKeyValueStateIteratorMutationTest {
 
     private static final int CHUNK_SIZE = 2;
@@ -70,6 +67,11 @@ public class RedisKeyValueStateIteratorMutationTest {
         mocks.close();
     }
 
+    // MT01
+    // Mutazione target: valore restituito da isTombstoneValue sostituito
+    // con false.
+    // Risultato atteso: il valore tombstone prodotto da
+    // DefaultStateEncoder viene riconosciuto correttamente.
     @Test
     public void tombstoneValueIsRecognizedAsTombstone() {
         DefaultStateEncoder<String, String> encoder =

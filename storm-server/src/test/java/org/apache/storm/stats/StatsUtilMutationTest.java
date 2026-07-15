@@ -24,13 +24,11 @@ import org.apache.storm.generated.WorkerSummary;
 import org.apache.storm.scheduler.WorkerSlot;
 import org.junit.jupiter.api.Test;
 
-/**
- * Test aggiunti dopo l'analisi PIT su StatsUtil.
- *
- * Sono test manuali e volutamente semplici. L'obiettivo e' colpire mutanti
- * sopravvissuti in punti gia' raggiungibili tramite metodi pubblici, senza usare
- * reflection e senza costruire scenari troppo grandi.
- */
+// Test manuali white-box aggiunti dopo l'analisi dei report PIT.
+// Ogni test è stato progettato per uccidere uno o più mutanti
+// sopravvissuti dopo le suite Category Partition e Control-Flow.
+// Gli oracoli verificano modificabilità delle strutture, somme,
+// medie pesate, merge, conversioni e gestione dei casi limite.
 public class StatsUtilMutationTest {
 
     @Test
