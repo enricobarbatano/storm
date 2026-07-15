@@ -6,7 +6,7 @@ import java.util.Map;
 
 import org.apache.storm.redis.common.commands.RedisCommands;
 import org.apache.storm.redis.common.container.RedisCommandsInstanceContainer;
-import org.apache.storm.redis.state.refactoring.RedisKeyValueStateIterator;
+import org.apache.storm.redis.state.RedisKeyValueStateIterator;
 import org.apache.storm.state.DefaultStateEncoder;
 import org.apache.storm.state.Serializer;
 
