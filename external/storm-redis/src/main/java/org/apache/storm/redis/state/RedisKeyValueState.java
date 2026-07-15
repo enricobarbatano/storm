@@ -29,7 +29,7 @@ import org.apache.storm.redis.common.config.JedisClusterConfig;
 import org.apache.storm.redis.common.config.JedisPoolConfig;
 import org.apache.storm.redis.common.container.RedisCommandsContainerBuilder;
 import org.apache.storm.redis.common.container.RedisCommandsInstanceContainer;
-import org.apache.storm.redis.state.refactoring.RedisKeyValueStateIterator;
+import org.apache.storm.redis.state.RedisKeyValueStateIterator;
 import org.apache.storm.state.DefaultStateEncoder;
 import org.apache.storm.state.DefaultStateSerializer;
 import org.apache.storm.state.KeyValueState;
